@@ -18,3 +18,8 @@ export function plural(n: number, forms: [string, string, string]): string {
   if (b === 1) return forms[0]
   return forms[2]
 }
+
+/** Длинное название — показываем мельче, чтобы длинные слова не рвались посередине. */
+export function isLongName(name: string): boolean {
+  return name.length > 28 || Math.max(...name.split(/[\s—-]+/).map((w) => w.length)) > 12
+}

@@ -93,7 +93,7 @@ const VW = Math.ceil(bx1 - bx0 + PAD * 2)
 const VH = Math.ceil(by1 - by0 + PAD * 2)
 
 /** Проецирует геометрию и кодирует в компактный path: целые координаты, относительные шаги. */
-function encode(geom, minRingArea = 0, clipRect = null) {
+function encode(geom, minRingArea = 0, clipRect = null, minStep = 0) {
   const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.type === 'MultiPolygon' ? geom.coordinates : []
   const lines = geom.type === 'LineString' ? [geom.coordinates] : geom.type === 'MultiLineString' ? geom.coordinates : []
   let d = ''
@@ -113,7 +113,8 @@ function encode(geom, minRingArea = 0, clipRect = null) {
       const x = Math.round(xy[0])
       const y = Math.round(xy[1])
       const last = q[q.length - 1]
-      if (!last || last[0] !== x || last[1] !== y) q.push([x, y])
+      // minStep — прореживание (для фоновых слоёв): точки ближе minStep к предыдущей пропускаем
+      if (!last || (minStep ? Math.abs(last[0] - x) + Math.abs(last[1] - y) >= minStep : last[0] !== x || last[1] !== y)) q.push([x, y])
     }
     if (close && q.length > 1 && q[0][0] === q[q.length - 1][0] && q[0][1] === q[q.length - 1][1]) q.pop()
     if (close && clipRect) {
@@ -224,14 +225,14 @@ writeFileSync(`${OUT}/regions.svg.json`, JSON.stringify({ viewBox: [0, 0, VW, VH
 console.log(`Регионов: ${Object.keys(ordered).length}, точек: ${totalPts}, viewBox ${VW}×${VH}`)
 
 // ---------- 5. Контекст: соседние страны, озёра, реки, сетка, врезки ----------
-const CLIP = '-5,15,230,89' // lon/lat-рамка с запасом; точнее режем по viewBox после проекции
+const CLIP = '-30,8,245,89.5' // lon/lat-рамка с большим запасом; точнее режем после проекции
 ms(
   `${CACHE}/ne_50m_admin_0_countries.geojson`,
   '-filter', '"RUS" != ADM0_A3',
   '-clip', `bbox=${CLIP}`,
   // вырезаем наши субъекты (Крым и новые регионы в NE числятся за Украиной)
   '-erase', `${CACHE}/merged.geojson`,
-  '-simplify', 'interval=0.06', 'keep-shapes',
+  '-simplify', 'interval=0.25', 'keep-shapes',
   '-dissolve',
   '-o', `${CACHE}/ctx_land.geojson`, 'force',
 )
@@ -257,10 +258,12 @@ const unwrapFC = (fc) => {
 const land = unwrapFC(readJSON(`${CACHE}/ctx_land.geojson`))
 const lakes = unwrapFC(readJSON(`${CACHE}/ctx_lakes.geojson`))
 const rivers = unwrapFC(readJSON(`${CACHE}/ctx_rivers.geojson`))
-const VIEW = [-20, -20, VW + 20, VH + 20]
-const join = (fc, minArea = 0, clip = null) => fc.features.map((f) => encode(f.geometry, minArea, clip).d).join('')
+// Соседние страны рисуем далеко за краями карты: на высоком экране телефона край не попадает в кадр
+// (раньше это прятали маски затухания, но они втрое замедляли отрисовку)
+const VIEW = [-VW * 0.5, -VH * 1.2, VW * 1.5, VH * 2.2]
+const join = (fc, minArea = 0, clip = null, step = 0) => fc.features.map((f) => encode(f.geometry, minArea, clip, step).d).join('')
 
-const grat = geoGraticule().extent([[10, 30], [200, 85]]).step([10, 10])()
+const grat = geoGraticule().extent([[-30, 0], [240, 85]]).step([10, 10])()
 const gratD = encode(grat).d
 
 // Врезки: рамки в градусах → прямоугольники в координатах карты
@@ -293,7 +296,7 @@ writeFileSync(
   `${OUT}/context.svg.json`,
   JSON.stringify({
     viewBox: [0, 0, VW, VH],
-    land: join(land, 200, VIEW),
+    land: join(land, 2500, VIEW, 14),
     lakes: join(lakes, 900),
     rivers: join(rivers),
     graticule: gratD,

@@ -1,3 +1,4 @@
+import { isLongName } from '../../lib/text'
 import { AnimatePresence, m as motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { REGION_BY_ID } from '../../data/regions'
@@ -217,7 +218,7 @@ export function BoardGame({ ids, onFinish, onExit }: Props) {
   const capCount = done.filter((r) => r.capOk).length
   const isCapital = phase.k === 'capital' || phase.k === 'capFb'
   const isPhone = useIsPhone()
-  const longName = region.name.length > 28
+  const longName = isLongName(region.name)
 
   // запоминаем варианты, чтобы показать их и после ответа
   const lastOptions = useRef<string[]>([])

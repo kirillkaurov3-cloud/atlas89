@@ -1,3 +1,4 @@
+import { isLongName } from '../../lib/text'
 import { AnimatePresence, m as motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { REGION_BY_ID } from '../../data/regions'
@@ -196,7 +197,7 @@ export function SpeedrunGame({ ids, rival, onFinish, onExit }: Props) {
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={started ? id : 'count'}
-            className={`${q.name} ${region.name.length > 28 ? q.nameLong : ''}`}
+            className={`${q.name} ${isLongName(region.name) ? q.nameLong : ''}`}
             data-testid="q-name"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

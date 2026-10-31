@@ -33,7 +33,8 @@
   line-height: 1.12;
   font-size: clamp(19px, 5.4vw, 30px);
   margin-top: 4px;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   text-wrap: balance;
 }
 .nameLong {

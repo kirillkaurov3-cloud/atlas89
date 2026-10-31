@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, type Ref } from 'react'
+import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type Ref } from 'react'
 import { REGION_BY_ID } from '../data/regions'
 import { Icon } from '../components/Icon'
 import { pickRegion, unionBBox, type MapData, type Rect } from './geo'
@@ -74,7 +74,7 @@ interface Props {
 const MIN_ZOOM = 0.85
 const MAX_ZOOM = 48
 /** Запас отрисовки SVG за краями экрана (доля размера) */
-const MARGIN = 0.3
+const MARGIN = 0
 
 interface Cam {
   s: number
@@ -154,26 +154,9 @@ export function MapView(props: Props) {
 
   const isMoving = () => anim.current != null || gesture.current.drag || gesture.current.inertia || !!gesture.current.wheel
 
-  /** Показать текущий кадр: в движении — дешёвой CSS-трансформацией уже нарисованной SVG. */
-  const apply = useCallback(() => {
-    const svg = svgRef.current
-    if (!svg) return
-    if (!isMoving()) return commit()
-    const c = cam.current
-    const b = committed.current
-    const k = c.s / b.s
-    const dx = c.tx - k * b.tx
-    const dy = c.ty - k * b.ty
-    const m = margin()
-    const { w, h } = size.current
-    // покрывает ли растянутая картинка весь экран и не слишком ли она «мыльная»
-    const covers = dx - k * m.x <= 0.5 && dy - k * m.y <= 0.5 && dx + k * (w + m.x) >= w - 0.5 && dy + k * (h + m.y) >= h - 0.5
-    // в полёте кадр заранее подобран с запасом — терпим сильнее растянутую (чуть «мыльную») картинку
-    const [kMin, kMax] = anim.current != null ? [0.125, 8] : [0.6, 2.4]
-    if (!covers || k > kMax || k < kMin) return commit()
-    svg.style.transform = `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(2)}px, 0) scale(${k.toFixed(5)})`
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commit])
+  /** Показать текущий кадр. Рисуем SVG напрямую: CSS-трансформация «картинки» на больших
+   *  экранах давала растянутые и недорисованные кадры. Скорость — за счёт дешёвых слоёв (без масок). */
+  const apply = useCallback(() => commit(), [commit])
 
   /** Движение закончилось — один раз перерисовать начисто. */
   const settle = useCallback(() => {
@@ -234,42 +217,41 @@ export function MapView(props: Props) {
       }
       animTarget.current = to
       const { w, h } = size.current
-      // Заранее рисуем кадр, который покрывает и начало, и конец полёта (с учётом запаса),
-      // чтобы весь полёт шёл CSS-трансформацией без перерисовки карты.
-      const vis = (c: Cam) => [-c.tx / c.s, -c.ty / c.s, (w - c.tx) / c.s, (h - c.ty) / c.s]
-      const a = vis(from)
-      const bb = vis(to)
-      const u = [Math.min(a[0], bb[0]), Math.min(a[1], bb[1]), Math.max(a[2], bb[2]), Math.max(a[3], bb[3])]
-      const env = Math.min(from.s, to.s, (w * (1 + 2 * MARGIN)) / (u[2] - u[0]), (h * (1 + 2 * MARGIN)) / (u[3] - u[1]))
-      const envCam = { s: env, tx: w / 2 - ((u[0] + u[2]) / 2) * env, ty: h / 2 - ((u[1] + u[3]) / 2) * env }
-      const cmt = committed.current
-      const coversAll = (c: Cam) => {
-        const k = c.s / cmt.s
-        const dx = c.tx - k * cmt.tx
-        const dy = c.ty - k * cmt.ty
-        const mx = w * MARGIN
-        const my = h * MARGIN
-        return k <= 8 && k >= 0.125 && dx - k * mx <= 0.5 && dy - k * my <= 0.5 && dx + k * (w + mx) >= w - 0.5 && dy + k * (h + my) >= h - 0.5
-      }
-      if (!(coversAll(from) && coversAll(to))) {
-        cam.current = envCam
-        commit()
-        cam.current = from
-      }
-      // интерполируем центр и логарифм масштаба — полёт выглядит естественно
-      const c0 = [(w / 2 - from.tx) / from.s, (h / 2 - from.ty) / from.s]
-      const c1 = [(w / 2 - to.tx) / to.s, (h / 2 - to.ty) / to.s]
+      // Если один кадр «вложен» в другой (приближение к региону, возврат к общему виду),
+      // у них есть неподвижная точка P: камера просто масштабируется вокруг неё и не
+      // пролетает на большом увеличении над соседними регионами.
       const l0 = Math.log(from.s)
       const l1 = Math.log(to.s)
       const t0 = performance.now()
       const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+      let frame: (e: number) => Cam
+      const ds = from.s - to.s
+      const px = Math.abs(ds) > 1e-9 ? (to.tx - from.tx) / ds : NaN
+      const py = Math.abs(ds) > 1e-9 ? (to.ty - from.ty) / ds : NaN
+      const sx = px * from.s + from.tx
+      const sy = py * from.s + from.ty
+      const nested = Number.isFinite(sx) && sx >= -0.05 * w && sx <= 1.05 * w && sy >= -0.05 * h && sy <= 1.05 * h
+      if (nested) {
+        frame = (e) => {
+          const sc = Math.exp(l0 + (l1 - l0) * e)
+          return { s: sc, tx: sx - px * sc, ty: sy - py * sc }
+        }
+      } else {
+        // кадры не вложены — летим «через» общий план: центр движется в экранных
+        // единицах того кадра, который мельче (так пролёт выглядит естественно)
+        const c0 = [(w / 2 - from.tx) / from.s, (h / 2 - from.ty) / from.s]
+        const c1 = [(w / 2 - to.tx) / to.s, (h / 2 - to.ty) / to.s]
+        frame = (e) => {
+          const sc = Math.exp(l0 + (l1 - l0) * e)
+          const k = from.s > to.s ? 1 - Math.pow(1 - e, 3) : Math.pow(e, 3) // центр — вперёд по пути отдаления
+          const cx = c0[0] + (c1[0] - c0[0]) * k
+          const cy = c0[1] + (c1[1] - c0[1]) * k
+          return { s: sc, tx: w / 2 - cx * sc, ty: h / 2 - cy * sc }
+        }
+      }
       const step = (now: number) => {
         const t = Math.min(1, (now - t0) / duration)
-        const e = ease(t)
-        const sc = Math.exp(l0 + (l1 - l0) * e)
-        const cx = c0[0] + (c1[0] - c0[0]) * e
-        const cy = c0[1] + (c1[1] - c0[1]) * e
-        cam.current = { s: sc, tx: w / 2 - cx * sc, ty: h / 2 - cy * sc }
+        cam.current = t < 1 ? frame(ease(t)) : to
         if (t < 1) {
           apply()
           anim.current = requestAnimationFrame(step)
@@ -635,7 +617,6 @@ export function MapView(props: Props) {
     })
   }
 
-  const uid = useId().replace(/:/g, '')
   const viewW = data.width
   const viewH = data.height
   const reliefHref = `${import.meta.env.BASE_URL}relief.webp`
@@ -645,20 +626,14 @@ export function MapView(props: Props) {
       ref={wrapRef}
       className={`${s.wrap} ${styleMode === 'board' ? s.board : s.study} ${palette === 'neutral' ? s.neutral : ''} ${ambient ? s.ambient : ''} ${className ?? ''}`}
     >
-      <svg ref={svgRef} className={s.svg} role="group" aria-label={ariaLabel} style={{ willChange: 'transform' }}>
+      <svg ref={svgRef} className={s.svg} role="group" aria-label={ariaLabel}>
         <g ref={gRef}>
           {styleMode === 'board' && <rect className={s.sea} x={-viewW} y={-viewH} width={viewW * 3} height={viewH * 3} />}
-          <EdgeFade id={uid} w={viewW} h={viewH} />
-          {/* Соседние страны, сетка и рельеф мягко растворяются у краёв данных — без «обрыва» */}
-          <g mask={`url(#${uid}fy)`}>
-            <g mask={`url(#${uid}fx)`}>
-              <path className={s.graticule} d={data.graticule} />
-              {styleMode === 'board' && (
-                <image href={reliefHref} x={0} y={0} width={viewW} height={viewH} preserveAspectRatio="none" className={s.relief} />
-              )}
-              <path className={s.land} d={data.land} />
-            </g>
-          </g>
+          <path className={s.graticule} d={data.graticule} />
+          {styleMode === 'board' && (
+            <image href={reliefHref} x={0} y={0} width={viewW} height={viewH} preserveAspectRatio="none" className={s.relief} />
+          )}
+          <path className={s.land} d={data.land} />
           <Regions data={data} states={states} />
           <path className={s.lakes} d={data.lakes} />
           <path className={s.rivers} d={data.rivers} />
@@ -703,32 +678,6 @@ export function MapView(props: Props) {
 }
 
 // ---------- Слои ----------
-
-function EdgeFade({ id, w, h }: { id: string; w: number; h: number }) {
-  const f = 0.09
-  return (
-    <defs>
-      <linearGradient id={`${id}gx`} x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stopColor="#fff" stopOpacity="0" />
-        <stop offset={f} stopColor="#fff" />
-        <stop offset={1 - f} stopColor="#fff" />
-        <stop offset="1" stopColor="#fff" stopOpacity="0" />
-      </linearGradient>
-      <linearGradient id={`${id}gy`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#fff" stopOpacity="0" />
-        <stop offset={f} stopColor="#fff" />
-        <stop offset={1 - f} stopColor="#fff" />
-        <stop offset="1" stopColor="#fff" stopOpacity="0" />
-      </linearGradient>
-      <mask id={`${id}fx`} maskUnits="userSpaceOnUse" x={0} y={-h} width={w} height={h * 3}>
-        <rect x={0} y={-h} width={w} height={h * 3} fill={`url(#${id}gx)`} />
-      </mask>
-      <mask id={`${id}fy`} maskUnits="userSpaceOnUse" x={-w} y={0} width={w * 3} height={h}>
-        <rect x={-w} y={0} width={w * 3} height={h} fill={`url(#${id}gy)`} />
-      </mask>
-    </defs>
-  )
-}
 
 const Regions = memo(function Regions({
   data,

@@ -67,9 +67,14 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OUT_W}" height="${
   <linearGradient id="north" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#b9d6a0"/><stop offset=".55" stop-color="#9ccb7c"/><stop offset="1" stop-color="#a9cf7a"/>
   </linearGradient>
+  <!-- мягкое затухание рельефа к краям картинки (вместо масок в рантайме) -->
+  <linearGradient id="fx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".07" stop-color="#fff"/><stop offset=".93" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="fy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".08" stop-color="#fff"/><stop offset=".9" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <mask id="edgeX"><rect width="${P.VW}" height="${P.VH}" fill="url(#fx)"/></mask>
+  <mask id="edgeY"><rect width="${P.VW}" height="${P.VH}" fill="url(#fy)"/></mask>
   <mask id="mtnMask"><path d="${mountains}" fill="#fff" filter="url(#core)"/></mask>
 </defs>
-<g clip-path="url(#land)">
+<g mask="url(#edgeY)"><g mask="url(#edgeX)"><g clip-path="url(#land)">
   <rect width="${P.VW}" height="${P.VH}" fill="url(#north)"/>
   <path d="${tundra}" fill="#c6dcb0" filter="url(#b1)" opacity=".7"/>
   <path d="${lowlands}" fill="#78b85c" filter="url(#lo)" opacity=".75"/>
@@ -80,7 +85,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OUT_W}" height="${
   <path d="${mountains}" fill="#b67c45" filter="url(#core)" opacity=".8"/>
   <path d="${mountains}" fill="#8f5a2c" filter="url(#peak)" opacity=".55"/>
   <rect width="${P.VW}" height="${P.VH}" filter="url(#grain)" mask="url(#mtnMask)" opacity=".55"/>
-</g>
+</g></g></g>
 </svg>`
 
 writeFileSync(`${CACHE}/relief.svg`, svg)
@@ -91,7 +96,7 @@ await page.setContent(`<html><body style="margin:0;background:transparent">${svg
 await page.waitForTimeout(500)
 const png = await page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: OUT_W, height: OUT_H } })
 // Перекодируем в webp через canvas самого браузера
-const q = Number(process.env.RELIEF_Q || 0.72)
+const q = Number(process.env.RELIEF_Q || 0.6)
 const dataUrl = await page.evaluate(
   async ({ b64, q }) => {
     const img = new Image()

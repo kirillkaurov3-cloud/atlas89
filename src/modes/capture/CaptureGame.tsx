@@ -1,3 +1,4 @@
+import { isLongName } from '../../lib/text'
 import { AnimatePresence, m as motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DISTRICT_BY_ID, REGIONS, REGION_BY_ID, type DistrictId } from '../../data/regions'
@@ -268,7 +269,7 @@ export function CaptureGame({ scope, session, length, fast, onFinish, onExit }: 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={`${id}-${showName}`}
-            className={`${q.name} ${region.name.length > 28 ? q.nameLong : ''}`}
+            className={`${q.name} ${isLongName(region.name) ? q.nameLong : ''}`}
             data-testid="q-name"
             initial={{ opacity: 0, scale: 1.06, filter: 'blur(6px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
