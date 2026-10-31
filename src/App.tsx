@@ -7,6 +7,8 @@ import { HomeScreen } from './screens/HomeScreen'
 import { Placeholder } from './screens/Placeholder'
 import { Reference } from './screens/Reference'
 import { Board } from './modes/board/Board'
+import { Capture } from './modes/capture/Capture'
+import { Toasts } from './components/Toasts'
 
 function screenFor(path: string): ReactNode {
   switch (path) {
@@ -15,7 +17,7 @@ function screenFor(path: string): ReactNode {
     case '/board':
       return <Board />
     case '/capture':
-      return <Placeholder title="Захват карты" />
+      return <Capture />
     case '/speedrun':
     case '/challenge':
       return <Placeholder title="Спидран 89" />
@@ -37,6 +39,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Background />
+      <Toasts />
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={route.path}
