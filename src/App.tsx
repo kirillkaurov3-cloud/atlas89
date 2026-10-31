@@ -3,13 +3,14 @@ import { Suspense, type ReactNode } from 'react'
 import { Background } from './components/Background'
 import { useRoute } from './lib/router'
 import { useThemeEffect } from './lib/theme'
-import { Home } from './screens/Home'
+import { HomeScreen } from './screens/HomeScreen'
 import { Placeholder } from './screens/Placeholder'
+import { Reference } from './screens/Reference'
 
 function screenFor(path: string): ReactNode {
   switch (path) {
     case '/':
-      return <Home />
+      return <HomeScreen />
     case '/board':
       return <Placeholder title="У доски" />
     case '/capture':
@@ -18,13 +19,13 @@ function screenFor(path: string): ReactNode {
     case '/challenge':
       return <Placeholder title="Спидран 89" />
     case '/reference':
-      return <Placeholder title="Справочник" />
+      return <Reference />
     case '/stats':
       return <Placeholder title="Статистика" />
     case '/settings':
       return <Placeholder title="Настройки" />
     default:
-      return <Home />
+      return <HomeScreen />
   }
 }
 

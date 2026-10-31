@@ -1,0 +1,320 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* жесты обрабатываем сами: никакого системного зума и прокрутки */
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.svg.dragging {
+  cursor: grabbing;
+}
+
+/* ---------- Учебный режим ---------- */
+.graticule {
+  fill: none;
+  stroke: var(--map-grat);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.land {
+  fill: var(--map-foreign);
+  stroke: var(--map-foreign-border);
+  stroke-width: 0.8px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.lakes {
+  fill: var(--map-lake);
+  pointer-events: none;
+}
+
+.rivers {
+  fill: none;
+  stroke: var(--map-river);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.region {
+  fill: var(--rc, #888);
+  fill-opacity: var(--map-fill-op);
+  stroke: var(--map-border);
+  stroke-width: 0.9px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition:
+    fill 0.35s var(--ease-out),
+    fill-opacity 0.25s var(--ease-out),
+    opacity 0.35s var(--ease-out);
+}
+
+.d_cfo { --rc: var(--d-cfo); }
+.d_szfo { --rc: var(--d-szfo); }
+.d_yufo { --rc: var(--d-yufo); }
+.d_skfo { --rc: var(--d-skfo); }
+.d_pfo { --rc: var(--d-pfo); }
+.d_ufo { --rc: var(--d-ufo); }
+.d_sfo { --rc: var(--d-sfo); }
+.d_dfo { --rc: var(--d-dfo); }
+
+.neutral .region {
+  --rc: var(--map-neutral);
+  fill-opacity: 1;
+}
+
+.region.hovered {
+  fill-opacity: calc(var(--map-fill-op) + 0.28);
+  stroke: var(--map-border-strong);
+  stroke-width: 1.4px;
+}
+
+/* ---------- Состояния ---------- */
+.region[data-state='dim'] {
+  opacity: 0.22;
+  pointer-events: none;
+}
+.region[data-state='learning'] {
+  --rc: var(--violet);
+  fill-opacity: 0.55;
+}
+.region[data-state='captured'] {
+  --rc: var(--lime);
+  fill-opacity: 0.9;
+  stroke: var(--map-captured-border);
+}
+.region[data-state='correct'],
+.region[data-state='found'] {
+  --rc: var(--lime);
+  fill-opacity: 0.92;
+  stroke: var(--map-captured-border);
+}
+.region[data-state='wrong'] {
+  --rc: var(--coral);
+  fill-opacity: 0.9;
+}
+.region[data-state='target'] {
+  --rc: var(--lime);
+  fill-opacity: 0.95;
+  stroke: #fff;
+  stroke-width: 2px;
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+.region[data-state='selected'] {
+  --rc: var(--violet);
+  fill-opacity: 0.95;
+  stroke: #fff;
+  stroke-width: 2px;
+}
+.region[data-state='match'] {
+  --rc: var(--amber);
+  fill-opacity: 0.9;
+}
+
+@keyframes pulse {
+  from {
+    fill-opacity: 0.95;
+  }
+  to {
+    fill-opacity: 0.55;
+  }
+}
+
+/* ---------- «Как на доске»: физическая карта без подписей ---------- */
+.board .sea {
+  fill: var(--board-sea);
+}
+.board .graticule {
+  stroke: rgba(40, 90, 140, 0.18);
+}
+.relief {
+  pointer-events: none;
+}
+.board .land {
+  fill: rgba(250, 248, 240, 0.55);
+  stroke: rgba(90, 80, 60, 0.35);
+}
+.board .lakes {
+  fill: var(--board-sea);
+}
+.board .rivers {
+  stroke: #4c95cf;
+  stroke-opacity: 0.85;
+}
+.board .region {
+  fill: transparent;
+  stroke: rgba(70, 45, 30, 0.55);
+  stroke-width: 0.8px;
+  stroke-dasharray: calc(var(--px, 1) * 4) calc(var(--px, 1) * 3);
+}
+.board .region.hovered {
+  fill: rgba(255, 255, 255, 0.28);
+  stroke-dasharray: none;
+  stroke: rgba(50, 30, 20, 0.85);
+}
+.board .region[data-state] {
+  fill: var(--rc);
+  stroke-dasharray: none;
+}
+.board .region[data-state='dim'] {
+  fill: rgba(250, 248, 240, 0.6);
+  opacity: 1;
+}
+
+/* ---------- Эффекты ---------- */
+.effects {
+  pointer-events: none;
+}
+
+/* «Обводка указкой» */
+.trace,
+.traceGlow {
+  fill: none;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  animation: trace 0.9s var(--ease-out) forwards;
+}
+.trace {
+  stroke: #fff;
+  stroke-width: 2.5px;
+}
+.traceGlow {
+  stroke: var(--lime);
+  stroke-width: 8px;
+  stroke-opacity: 0.55;
+  filter: blur(2px);
+}
+@keyframes trace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.flash {
+  fill: #fff;
+  animation: flash 0.7s ease-out forwards;
+}
+@keyframes flash {
+  from {
+    fill-opacity: 0.85;
+  }
+  to {
+    fill-opacity: 0;
+  }
+}
+
+/* Мягкая тряска красным: амплитуда в экранных пикселях через --px */
+.shake {
+  fill: var(--coral);
+  fill-opacity: 0.85;
+  stroke: #fff;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  animation:
+    shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both,
+    fadeOut 0.5s 0.6s ease-out forwards;
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(calc(var(--px) * -2px)); }
+  20%, 80% { transform: translateX(calc(var(--px) * 4px)); }
+  30%, 50%, 70% { transform: translateX(calc(var(--px) * -7px)); }
+  40%, 60% { transform: translateX(calc(var(--px) * 7px)); }
+}
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Рамки врезок */
+.frame {
+  fill: none;
+  stroke: var(--map-frame);
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* ---------- «Дыхание» на главном экране: волна с запада на восток ---------- */
+.ambient .region {
+  animation: breathe 6s ease-in-out infinite;
+  animation-delay: calc(var(--wx, 0) * 3s);
+}
+.ambient .region[data-state] {
+  animation: none;
+}
+@keyframes breathe {
+  0%, 100% {
+    fill-opacity: var(--map-fill-op);
+  }
+  50% {
+    fill-opacity: calc(var(--map-fill-op) + 0.3);
+  }
+}
+
+/* ---------- Подсказка и кнопки ---------- */
+.hoverLabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--glass-strong);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient .region,
+  .region[data-state='target'] {
+    animation: none;
+  }
+  .trace,
+  .traceGlow {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

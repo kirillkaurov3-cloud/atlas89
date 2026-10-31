@@ -18,6 +18,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2020',
+    cssTarget: ['chrome90', 'safari14', 'firefox90'],
     assetsInlineLimit: 0,
   },
 })

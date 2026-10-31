@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run validate && tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate": "node --disable-warning=ExperimentalWarning scripts/validate-map.mjs",
+    "map:fetch": "node scripts/fetch-sources.mjs",
+    "map:build": "node --disable-warning=ExperimentalWarning scripts/build-map.mjs && npm run validate",
+    "map:relief": "node --disable-warning=ExperimentalWarning scripts/build-relief.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",
@@ -25,6 +29,7 @@
     "d3-geo": "^3.1.1",
     "mapshaper": "^0.7.101",
     "oxlint": "^1.89.0",
+    "polylabel": "^2.1.0",
     "topojson-client": "^3.1.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.5"

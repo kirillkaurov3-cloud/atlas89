@@ -44,6 +44,28 @@
   --blob-opacity: 0.42;
   --accent-text: var(--lime);
   --focus: var(--lime);
+
+  /* Карта */
+  --map-fill-op: 0.5;
+  --map-border: rgba(235, 240, 255, 0.55);
+  --map-border-strong: #fff;
+  --map-captured-border: rgba(16, 24, 10, 0.55);
+  --map-foreign: rgba(255, 255, 255, 0.045);
+  --map-foreign-border: rgba(255, 255, 255, 0.08);
+  --map-lake: rgba(110, 170, 255, 0.35);
+  --map-river: rgba(110, 170, 255, 0.35);
+  --map-grat: rgba(255, 255, 255, 0.06);
+  --map-neutral: #2a3046;
+  --map-frame: rgba(198, 255, 61, 0.7);
+  --d-cfo: #8b74ff;
+  --d-szfo: #4aa3ff;
+  --d-yufo: #ffb547;
+  --d-skfo: #ff6f91;
+  --d-pfo: #33d1a0;
+  --d-ufo: #e8dc4f;
+  --d-sfo: #45d3ea;
+  --d-dfo: #ff8a5c;
+  --board-sea: #a6d3ee;
 }
 
 :root[data-theme='light'] {
@@ -65,6 +87,27 @@
   --blob-opacity: 0.55;
   --accent-text: #4c7a00;
   --focus: var(--violet);
+
+  --map-fill-op: 0.5;
+  --map-border: rgba(255, 255, 255, 0.95);
+  --map-border-strong: #1b1f3a;
+  --map-captured-border: rgba(30, 50, 0, 0.5);
+  --map-foreign: rgba(20, 24, 60, 0.05);
+  --map-foreign-border: rgba(20, 24, 60, 0.08);
+  --map-lake: rgba(60, 140, 230, 0.35);
+  --map-river: rgba(60, 140, 230, 0.4);
+  --map-grat: rgba(20, 24, 60, 0.06);
+  --map-neutral: #d5d9e8;
+  --map-frame: rgba(124, 92, 255, 0.8);
+  --d-cfo: #7c5cff;
+  --d-szfo: #2f8cff;
+  --d-yufo: #ff9f1c;
+  --d-skfo: #ff4f7b;
+  --d-pfo: #14b886;
+  --d-ufo: #d4c21a;
+  --d-sfo: #19b8d6;
+  --d-dfo: #ff7340;
+  --board-sea: #a6d3ee;
 }
 
 /* ========== База ========== */
@@ -150,7 +193,6 @@ a {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   backdrop-filter: blur(var(--blur)) saturate(160%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
 }
 
 .btn {
@@ -202,7 +244,6 @@ a {
   background: var(--glass-strong);
   border: 1px solid var(--stroke);
   backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
   transition: transform 0.18s var(--ease-out), background-color 0.2s;
 }
 .icon-btn:hover {
