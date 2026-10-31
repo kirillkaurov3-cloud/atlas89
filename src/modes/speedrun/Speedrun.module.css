@@ -1,0 +1,190 @@
+.question {
+  padding-left: 18px;
+}
+
+.clockWrap {
+  position: relative;
+  flex: none;
+  text-align: right;
+}
+.clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.penalty {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--coral);
+  pointer-events: none;
+}
+
+/* полоска «время соперника» */
+.rival {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: transparent;
+}
+.rival span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--coral);
+  opacity: 0.8;
+}
+
+.challengeCard {
+  padding: 24px;
+  text-align: center;
+  border-color: color-mix(in srgb, var(--violet) 60%, transparent);
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--violet) 30%, transparent), transparent 70%),
+    var(--glass);
+}
+.challengeKicker {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--violet-2);
+  text-transform: uppercase;
+}
+.bigTime {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 56px;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0;
+}
+
+.bestRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-text);
+}
+.bestRow span {
+  color: var(--text);
+}
+.bestRow .runs {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+/* Карточка результата: градиентная рамка */
+.resultCard {
+  position: relative;
+  padding: 2px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, var(--violet), var(--lime));
+  box-shadow: 0 20px 60px -20px color-mix(in srgb, var(--violet) 70%, transparent);
+}
+.resultInner {
+  border-radius: 28px;
+  padding: 22px 22px 20px;
+  background:
+    radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--lime) 18%, transparent), transparent 60%),
+    radial-gradient(90% 90% at 0% 100%, color-mix(in srgb, var(--violet) 30%, transparent), transparent 60%),
+    var(--bg);
+}
+.resultTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.recordBadge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-weight: 800;
+  font-size: 12px;
+}
+.resultTime {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(54px, 17vw, 84px);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  margin: 18px 0 14px;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(90deg, var(--text), color-mix(in srgb, var(--lime) 70%, var(--text)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.resultMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.versus {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+.win {
+  background: color-mix(in srgb, var(--lime) 20%, transparent);
+  color: var(--accent-text);
+}
+.lose {
+  background: color-mix(in srgb, var(--coral) 18%, transparent);
+  color: var(--coral);
+}
+.prevBest {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.shareRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nickInput {
+  flex: 1 1 160px;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--glass-strong);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+.nickInput:focus {
+  border-color: var(--stroke-strong);
+}
+.shareRow :global(.btn) {
+  flex: 1 1 auto;
+}
+
+.missed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

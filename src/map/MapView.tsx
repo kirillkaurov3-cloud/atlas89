@@ -467,8 +467,9 @@ export function MapView(props: Props) {
 
   const allIds = useMemo(() => Object.keys(data.regions), [data])
 
-  const pickAt = (clientX: number, clientY: number) => {
-    const svg = svgRef.current!
+  const pickAt = (clientX: number, clientY: number): { id: string | null; proximity: boolean } => {
+    const svg = svgRef.current
+    if (!svg) return { id: null, proximity: false }
     const r = svg.getBoundingClientRect()
     const el = document.elementFromPoint(clientX, clientY) as Element | null
     const directRaw = el?.closest?.('[data-id]')?.getAttribute('data-id') ?? null

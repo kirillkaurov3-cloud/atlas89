@@ -8,6 +8,7 @@ import { Placeholder } from './screens/Placeholder'
 import { Reference } from './screens/Reference'
 import { Board } from './modes/board/Board'
 import { Capture } from './modes/capture/Capture'
+import { Speedrun } from './modes/speedrun/Speedrun'
 import { Toasts } from './components/Toasts'
 
 function screenFor(path: string): ReactNode {
@@ -20,7 +21,7 @@ function screenFor(path: string): ReactNode {
       return <Capture />
     case '/speedrun':
     case '/challenge':
-      return <Placeholder title="Спидран 89" />
+      return <Speedrun />
     case '/reference':
       return <Reference />
     case '/stats':
