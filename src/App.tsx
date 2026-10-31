@@ -1,0 +1,53 @@
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
+import { Suspense, type ReactNode } from 'react'
+import { Background } from './components/Background'
+import { useRoute } from './lib/router'
+import { useThemeEffect } from './lib/theme'
+import { Home } from './screens/Home'
+import { Placeholder } from './screens/Placeholder'
+
+function screenFor(path: string): ReactNode {
+  switch (path) {
+    case '/':
+      return <Home />
+    case '/board':
+      return <Placeholder title="У доски" />
+    case '/capture':
+      return <Placeholder title="Захват карты" />
+    case '/speedrun':
+    case '/challenge':
+      return <Placeholder title="Спидран 89" />
+    case '/reference':
+      return <Placeholder title="Справочник" />
+    case '/stats':
+      return <Placeholder title="Статистика" />
+    case '/settings':
+      return <Placeholder title="Настройки" />
+    default:
+      return <Home />
+  }
+}
+
+
+export default function App() {
+  useThemeEffect()
+  const route = useRoute()
+  return (
+    <MotionConfig reducedMotion="user">
+      <Background />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={route.path}
+          className="screen"
+          initial={{ opacity: 0, y: 14, scale: 0.99 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.99 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 34, mass: 0.8 }}
+          style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}
+        >
+          <Suspense fallback={null}>{screenFor(route.path)}</Suspense>
+        </motion.div>
+      </AnimatePresence>
+    </MotionConfig>
+  )
+}

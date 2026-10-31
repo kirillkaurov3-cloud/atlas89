@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#070A16" />
+    <meta name="description" content="Тренажёр субъектов РФ: найди регион на карте и назови столицу. Все 89 субъектов, режим «Как на доске», спидран и вызов другу." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Атлас 89</title>
+    <script>
+      // Тема до первой отрисовки, чтобы не мигало
+      try {
+        var s = JSON.parse(localStorage.getItem('atlas89:state') || '{}')
+        var t = (s.settings && s.settings.theme) || 'system'
+        if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        document.documentElement.dataset.theme = t
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

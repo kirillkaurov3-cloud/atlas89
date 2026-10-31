@@ -1,0 +1,77 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--bg-2) 0%, var(--bg) 60%);
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: var(--blob-opacity);
+  will-change: transform;
+}
+
+.a {
+  width: 60vmax;
+  height: 60vmax;
+  left: -18vmax;
+  top: -22vmax;
+  background: var(--blob-a);
+  animation: floatA 26s ease-in-out infinite alternate;
+}
+
+.b {
+  width: 52vmax;
+  height: 52vmax;
+  right: -20vmax;
+  top: 18vh;
+  background: var(--blob-b);
+  opacity: calc(var(--blob-opacity) * 0.75);
+  animation: floatB 32s ease-in-out infinite alternate;
+}
+
+.c {
+  width: 38vmax;
+  height: 38vmax;
+  left: 10vw;
+  bottom: -22vmax;
+  background: var(--blob-c);
+  opacity: calc(var(--blob-opacity) * 0.38);
+  animation: floatC 38s ease-in-out infinite alternate;
+}
+
+/* Еле заметное зерно, чтобы градиенты не «полосили» */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+@keyframes floatA {
+  to {
+    transform: translate3d(14vw, 10vh, 0) scale(1.12);
+  }
+}
+@keyframes floatB {
+  to {
+    transform: translate3d(-16vw, 14vh, 0) scale(0.9);
+  }
+}
+@keyframes floatC {
+  to {
+    transform: translate3d(22vw, -12vh, 0) scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
+}

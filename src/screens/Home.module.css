@@ -1,0 +1,245 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(260px, 46dvh) auto;
+  grid-template-areas: 'header' 'map' 'panel';
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 20px)
+    calc(var(--safe-left) + 16px);
+  gap: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.mapArea {
+  grid-area: map;
+  position: relative;
+  min-height: 0;
+}
+
+.mapPlaceholder {
+  height: 100%;
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--stroke-strong);
+  background:
+    radial-gradient(60% 50% at 50% 50%, rgba(124, 92, 255, 0.18), transparent 70%);
+}
+
+.panel {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.heroText {
+  min-width: 0;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.heroTitle {
+  font-size: 34px;
+  margin: 2px 0 4px;
+}
+
+.heroOf {
+  color: var(--text-faint);
+  font-size: 22px;
+  margin-left: 2px;
+}
+
+.tagline {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  min-height: 132px;
+  transition: background-color 0.2s;
+}
+
+.card:hover {
+  background: var(--glass-strong);
+}
+
+.featured {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 92px;
+  border-color: color-mix(in srgb, var(--lime) 45%, transparent);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--lime) 16%, transparent), transparent 60%),
+    var(--glass);
+}
+
+.wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 0 !important;
+}
+
+.cardIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--tone-ink);
+  background: var(--tone);
+  box-shadow: 0 6px 18px -6px var(--tone);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.featured .cardTitle {
+  font-size: 19px;
+}
+
+.cardText {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.badge {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+
+.cardGo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+
+.lime {
+  --tone: var(--lime);
+  --tone-ink: var(--lime-ink);
+}
+.violet {
+  --tone: var(--violet);
+  --tone-ink: #fff;
+}
+.sky {
+  --tone: var(--sky);
+  --tone-ink: #04202a;
+}
+.amber {
+  --tone: var(--amber);
+  --tone-ink: #2a1a00;
+}
+
+/* ПК: карта слева крупно, панель справа */
+@media (min-width: 900px) {
+  .page {
+    height: 100dvh;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'header header' 'map panel';
+    padding: 20px 28px 28px;
+    gap: 20px 28px;
+  }
+  .panel {
+    overflow-y: auto;
+    justify-content: center;
+    padding: 4px;
+    margin: -4px;
+  }
+  .hero {
+    padding: 22px;
+  }
+  .heroTitle {
+    font-size: 44px;
+  }
+  .card {
+    min-height: 150px;
+    padding: 18px;
+  }
+  .featured {
+    min-height: 104px;
+  }
+}
