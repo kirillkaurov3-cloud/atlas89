@@ -4,11 +4,12 @@ import { Background } from './components/Background'
 import { useRoute } from './lib/router'
 import { useThemeEffect } from './lib/theme'
 import { HomeScreen } from './screens/HomeScreen'
-import { Placeholder } from './screens/Placeholder'
 import { Reference } from './screens/Reference'
 import { Board } from './modes/board/Board'
 import { Capture } from './modes/capture/Capture'
 import { Speedrun } from './modes/speedrun/Speedrun'
+import { Stats } from './screens/Stats'
+import { Settings } from './screens/Settings'
 import { Toasts } from './components/Toasts'
 
 function screenFor(path: string): ReactNode {
@@ -25,9 +26,9 @@ function screenFor(path: string): ReactNode {
     case '/reference':
       return <Reference />
     case '/stats':
-      return <Placeholder title="Статистика" />
+      return <Stats />
     case '/settings':
-      return <Placeholder title="Настройки" />
+      return <Settings />
     default:
       return <HomeScreen />
   }

@@ -5,6 +5,7 @@ import { useMapData } from '../map/useMapData'
 import { navigate } from '../lib/router'
 import { useStore } from '../lib/store'
 import { Home } from './Home'
+import { NickPrompt } from '../components/NickPrompt'
 
 /** Главный экран с живой картой: регионы медленно «дышат» волной с запада на восток. */
 export function HomeScreen() {
@@ -17,6 +18,8 @@ export function HomeScreen() {
     return st
   }, [capture])
   return (
+    <>
+    <NickPrompt />
     <Home
       captured={Object.keys(states).length}
       mapSlot={
@@ -32,5 +35,6 @@ export function HomeScreen() {
         ) : undefined
       }
     />
+    </>
   )
 }

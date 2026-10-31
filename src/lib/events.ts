@@ -22,7 +22,12 @@ export interface RoundEvent {
   mapStyle: 'study' | 'board'
 }
 
-type Events = { answer: AnswerEvent; round: RoundEvent }
+export interface CaptureEvent {
+  regionId: string
+  captured: boolean
+}
+
+type Events = { answer: AnswerEvent; round: RoundEvent; capture: CaptureEvent }
 type Handler<T> = (e: T) => void
 
 const handlers: { [K in keyof Events]?: Set<Handler<Events[K]>> } = {}

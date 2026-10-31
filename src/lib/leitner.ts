@@ -15,6 +15,7 @@
  * регион вернётся через 2 вопроса — ошибочные приходят чаще.
  */
 import { REGIONS, type DistrictId } from '../data/regions'
+import { emit } from './events'
 import { getState, setState, useStore, type AppState } from './store'
 
 export const CAPTURED_LEVEL = 4
@@ -122,6 +123,7 @@ export function applyResult(id: string, ok: boolean, session: number, qn: number
     c.dueQ = qn + 2
   }
   setState({ capture: { ...cs, cards: { ...cs.cards, [id]: c } } })
+  emit('capture', { regionId: id, captured: c.level >= CAPTURED_LEVEL })
   return { card: c, justCaptured, lost }
 }
 

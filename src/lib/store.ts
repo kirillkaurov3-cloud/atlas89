@@ -92,7 +92,7 @@ export function resetState() {
   state = {
     version: SCHEMA_VERSION,
     settings: { ...state.settings },
-    profile: { nickname: null, nickAsked: false },
+    profile: { ...state.profile },
   }
   writeRaw(state)
   listeners.forEach((l) => l())
