@@ -2,7 +2,7 @@
   height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(200px, 1fr) auto auto;
   grid-template-areas: 'header' 'top' 'map' 'insets' 'panel';
   gap: 10px;
   padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 14px) calc(var(--safe-bottom) + 14px)
@@ -44,8 +44,6 @@
   grid-area: map;
   position: relative;
   min-height: 0;
-  /* на телефоне карта не выше, чем нужно России (≈ 1,8:1) с запасом на зум */
-  height: min(calc((100vw - 28px) * 0.9), 58dvh);
   overflow: hidden;
   border-radius: var(--r-lg);
   padding: 0;
@@ -78,9 +76,6 @@
   }
   .title {
     font-size: 22px;
-  }
-  .map {
-    height: auto;
   }
   .panel {
     overflow-y: auto;

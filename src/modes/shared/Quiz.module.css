@@ -1,0 +1,376 @@
+/* ---------- Плашка с вопросом ---------- */
+.question {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 12px 12px;
+  border-radius: var(--r-lg);
+  min-height: 88px;
+  overflow: hidden;
+}
+
+.qBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  font-size: clamp(19px, 5.4vw, 30px);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.nameLong {
+  font-size: clamp(16px, 4.4vw, 24px);
+}
+
+.feedback {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.ok {
+  color: var(--accent-text);
+}
+.bad {
+  color: var(--coral);
+}
+
+.counter {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Полоска прогресса раунда внизу плашки */
+.roundBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--violet), var(--lime));
+  border-radius: 0 3px 3px 0;
+  transition: width 0.5s var(--ease-out);
+}
+
+/* ---------- Варианты ответа ---------- */
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.2;
+  background: var(--glass-strong);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(var(--blur));
+  transition: background-color 0.2s, border-color 0.2s, opacity 0.2s, color 0.2s;
+}
+.choice:hover {
+  background: var(--glass-hover);
+}
+.choiceText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.choice.right,
+.typeField.right {
+  background: var(--lime);
+  color: var(--lime-ink);
+  border-color: transparent;
+}
+.choice.right :global(.kbd) {
+  color: var(--lime-ink);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+.choice.wrong,
+.typeField.wrong {
+  background: var(--coral);
+  color: #fff;
+  border-color: transparent;
+}
+.choice.wrong :global(.kbd) {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.choice.faded {
+  opacity: 0.45;
+}
+
+/* ---------- Ввод с клавиатуры ---------- */
+.typing {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.typeField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 18px;
+  border-radius: var(--r-pill);
+  transition: background-color 0.2s;
+}
+.typeField input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+}
+.typeField input::placeholder {
+  color: var(--text-faint);
+}
+.suggest {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.suggest button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--stroke);
+  font-weight: 700;
+  font-size: 14px;
+}
+.suggest .suggestActive {
+  border-color: var(--lime);
+}
+.correction {
+  font-size: 14px;
+  color: var(--text-dim);
+  padding-left: 6px;
+}
+
+/* ---------- Нижняя панель ---------- */
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.actions :global(.btn) {
+  flex: 1;
+}
+.hintRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 8px;
+}
+.statChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.statChips :global(.chip) {
+  font-variant-numeric: tabular-nums;
+}
+.okChip {
+  color: var(--accent-text) !important;
+}
+.badChip {
+  color: var(--coral) !important;
+}
+
+@media (min-width: 900px) {
+  .question {
+    min-height: 120px;
+    padding: 18px 20px 18px 16px;
+  }
+  .name {
+    font-size: 30px;
+  }
+  .nameLong {
+    font-size: 24px;
+  }
+  .choices {
+    grid-template-columns: 1fr;
+  }
+  .choice {
+    min-height: 56px;
+  }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- Экраны настройки и итогов ---------- */
+.setup {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 20px);
+}
+.setupInner {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.setupHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.setupHead h1 {
+  font-size: 22px;
+}
+.section {
+  padding: 16px;
+  border-radius: var(--r-lg);
+}
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.segBtn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--glass-strong);
+  border: 1px solid var(--stroke);
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.segBtn[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+  border-color: transparent;
+}
+.lead {
+  color: var(--text-dim);
+  font-size: 15px;
+}
+.startBtn {
+  min-height: 58px;
+  font-size: 17px;
+  position: sticky;
+  bottom: calc(var(--safe-bottom) + 12px);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bigStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.bigStat {
+  padding: 14px 12px;
+  border-radius: var(--r-md);
+  text-align: center;
+}
+.bigNum {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.bigLabel {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.mistakes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mistakes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  font-size: 14px;
+}
+.mistakes .mName {
+  font-weight: 700;
+}
+.mistakes .mWhat {
+  color: var(--text-dim);
+  text-align: right;
+  font-size: 13px;
+}
+.resultActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.resultActions :global(.btn) {
+  min-height: 52px;
+}
+.full {
+  grid-column: 1 / -1;
+}

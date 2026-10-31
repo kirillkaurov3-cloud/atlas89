@@ -39,9 +39,15 @@
   display: none;
 }
 .strip .card {
-  height: 138px;
+  height: 112px;
   flex: none;
   scroll-snap-align: start;
+}
+
+@media (min-width: 900px) {
+  .strip .card {
+    height: 138px;
+  }
 }
 
 .grid .list {

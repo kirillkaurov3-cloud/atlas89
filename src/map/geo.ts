@@ -140,9 +140,12 @@ export function unionBBox(regions: Record<string, RegionGeo>, ids: string[]): Re
 
 /**
  * Выбор региона по точке с «расширенной зоной касания»:
- *  1) если попали прямо в мелкий регион (на экране меньше smallPx) — берём его;
- *  2) иначе ищем ближайший мелкий регион в радиусе radiusPx экранных пикселей;
- *  3) иначе — регион, в который попали напрямую (или ничего).
+ *  1) тап в пустое место (море, соседняя страна) — ближайший мелкий регион
+ *     (на экране меньше smallPx) в радиусе radiusPx;
+ *  2) тап прямо в регион — засчитываем его; перехватить может только
+ *     сверхмелкий сосед (меньше tinyPx: Москва, СПб, Севастополь, Ингушетия
+ *     при общем плане), если тап пришёлся в паре пикселей от него;
+ *  3) иначе — ничего.
  */
 export function pickRegion(opts: {
   regions: Record<string, RegionGeo>
@@ -153,18 +156,29 @@ export function pickRegion(opts: {
   scale: number
   directId: string | null
   smallPx?: number
+  tinyPx?: number
   radiusPx?: number
+  /** Разрешить перехват при прямом попадании (для пальца — да, для мыши — нет) */
+  stealFromDirect?: boolean
 }): { id: string | null; proximity: boolean } {
-  const { regions, x, y, scale, directId, smallPx = 24, radiusPx = 12 } = opts
-  const isSmall = (g: RegionGeo) => Math.max(g.b[2] - g.b[0], g.b[3] - g.b[1]) * scale < smallPx
-  if (directId && regions[directId] && isSmall(regions[directId])) return { id: directId, proximity: false }
-  const r = radiusPx / scale
+  const { regions, x, y, scale, directId, smallPx = 24, tinyPx = 8, radiusPx = 12, stealFromDirect = true } = opts
+  const screenSize = (g: RegionGeo) => Math.max(g.b[2] - g.b[0], g.b[3] - g.b[1]) * scale
+  const direct = directId ? regions[directId] : null
+  if (direct && (screenSize(direct) < tinyPx || !stealFromDirect)) return { id: directId, proximity: false }
+  // Попали в обычный регион — перехват только крошечным соседом и на меньшем радиусе
+  const limitPx = direct ? tinyPx : smallPx
+  const r = (direct ? radiusPx * 0.4 : radiusPx) / scale
   let best: string | null = null
   let bestD = Infinity
+  const directSize = direct ? screenSize(direct) : Infinity
   for (const id of opts.ids) {
     if (id === directId) continue
     const g = regions[id]
-    if (!g || !isSmall(g)) continue
+    if (!g) continue
+    const size = screenSize(g)
+    if (size >= limitPx) continue
+    // при прямом попадании перехватывает только тот, кто минимум втрое меньше
+    if (direct && size * 3 > directSize) continue
     if (x < g.b[0] - r || x > g.b[2] + r || y < g.b[1] - r || y > g.b[3] + r) continue
     const d = distanceToRegion(id, g, x, y)
     if (d <= r && d < bestD) {

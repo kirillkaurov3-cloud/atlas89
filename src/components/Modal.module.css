@@ -1,0 +1,30 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: end center;
+  padding: 16px 12px calc(var(--safe-bottom) + 12px);
+  background: rgba(4, 6, 16, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.box {
+  width: 100%;
+  max-width: 440px;
+  padding: 22px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 600px) {
+  .backdrop {
+    place-items: center;
+  }
+}

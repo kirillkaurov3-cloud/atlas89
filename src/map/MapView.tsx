@@ -21,13 +21,16 @@ export type MapPalette = 'district' | 'neutral'
 export interface MapEffect {
   key: string
   id: string
-  kind: 'trace' | 'shake' | 'flash'
+  kind: 'trace' | 'shake' | 'flash' | 'capture'
 }
 
 export interface MapCamera {
   flyTo(target: string | string[] | Rect, opts?: { duration?: number; maxZoom?: number; fill?: number }): void
   reset(duration?: number): void
   zoomBy(factor: number): void
+  /** Текущий кадр камеры (чтобы вернуться после облёта) */
+  getView(): { s: number; tx: number; ty: number }
+  setView(v: { s: number; tx: number; ty: number }, duration?: number): void
 }
 
 export interface Padding {
@@ -224,6 +227,12 @@ export function MapView(props: Props) {
       },
       reset(duration = 700) {
         animateTo(fitAll(), duration)
+      },
+      getView() {
+        return { ...cam.current }
+      },
+      setView(v, duration = 700) {
+        animateTo(v, duration)
       },
       zoomBy(f) {
         const { w, h } = size.current
@@ -470,7 +479,7 @@ export function MapView(props: Props) {
     const y = (clientY - r.top - c.ty) / c.s
     const ids = sel ? allIds.filter(sel) : allIds
     const coarse = window.matchMedia('(pointer: coarse)').matches
-    return pickRegion({ regions: data.regions, ids, x, y, scale: c.s, directId: direct, radiusPx: coarse ? 12 : 8 })
+    return pickRegion({ regions: data.regions, ids, x, y, scale: c.s, directId: direct, radiusPx: coarse ? 12 : 8, stealFromDirect: coarse })
   }
 
   const tapAt = (e: PointerEvent) => {
@@ -636,6 +645,22 @@ const Regions = memo(function Regions({
   )
 })
 
+/** Заливка при захвате: круг расходится от центра региона, обрезанный по его границе. */
+export function CaptureFill({ k, d, c, b }: { k: string; d: string; c: [number, number]; b: [number, number, number, number] }) {
+  const r = Math.max(...[b[0], b[2]].flatMap((x) => [b[1], b[3]].map((y) => Math.hypot(x - c[0], y - c[1]))))
+  return (
+    <g>
+      <clipPath id={`cap-${k}`}>
+        <path d={d} fillRule="evenodd" />
+      </clipPath>
+      <g clipPath={`url(#cap-${k})`}>
+        <circle className={s.captureFill} cx={c[0]} cy={c[1]} r={r * 1.05} />
+        <circle className={s.captureRing} cx={c[0]} cy={c[1]} r={r * 1.05} />
+      </g>
+    </g>
+  )
+}
+
 const Effects = memo(function Effects({ data, effects }: { data: MapData; effects?: MapEffect[] }) {
   if (!effects?.length) return null
   return (
@@ -651,6 +676,7 @@ const Effects = memo(function Effects({ data, effects }: { data: MapData; effect
             </g>
           )
         if (ef.kind === 'flash') return <path key={ef.key} className={s.flash} d={g.d} fillRule="evenodd" />
+        if (ef.kind === 'capture') return <CaptureFill key={ef.key} k={ef.key} d={g.d} c={g.c} b={g.b} />
         return <path key={ef.key} className={s.shake} d={g.d} fillRule="evenodd" />
       })}
     </g>

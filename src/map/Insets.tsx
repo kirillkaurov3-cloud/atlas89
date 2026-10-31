@@ -4,7 +4,7 @@ import { REGION_BY_ID } from '../data/regions'
 import { Icon } from '../components/Icon'
 import { updateSettings, useStore } from '../lib/store'
 import { pickRegion, type MapData } from './geo'
-import type { MapEffect, MapPalette, MapStyleMode, RegionState } from './MapView'
+import { CaptureFill, type MapEffect, type MapPalette, type MapStyleMode, type RegionState } from './MapView'
 import m from './MapView.module.css'
 import s from './Insets.module.css'
 
@@ -83,7 +83,8 @@ const Inset = memo(function Inset({
     const raw = el?.closest?.('[data-id]')?.getAttribute('data-id') ?? null
     const direct = raw && (!selectable || selectable(raw)) ? raw : null
     const ids = selectable ? inset.ids.filter(selectable) : inset.ids
-    const { id, proximity } = pickRegion({ regions: data.regions, ids, x, y, scale, directId: direct, radiusPx: 10 })
+    const coarse = window.matchMedia('(pointer: coarse)').matches
+    const { id, proximity } = pickRegion({ regions: data.regions, ids, x, y, scale, directId: direct, radiusPx: 10, stealFromDirect: coarse })
     if (id) onRegionClick(id, { proximity })
   }
 
@@ -143,6 +144,7 @@ const Inset = memo(function Inset({
                   <path className={m.trace} d={g.d} pathLength={1} />
                 </g>
               )
+            if (ef.kind === 'capture') return <CaptureFill key={ef.key} k={`i${inset.id}${ef.key}`} d={g.d} c={g.c} b={g.b} />
             return (
               <path key={ef.key} className={`${m.effects} ${ef.kind === 'flash' ? m.flash : m.shake}`} d={g.d} fillRule="evenodd" />
             )

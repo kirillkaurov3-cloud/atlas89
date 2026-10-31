@@ -6,13 +6,14 @@ import { useThemeEffect } from './lib/theme'
 import { HomeScreen } from './screens/HomeScreen'
 import { Placeholder } from './screens/Placeholder'
 import { Reference } from './screens/Reference'
+import { Board } from './modes/board/Board'
 
 function screenFor(path: string): ReactNode {
   switch (path) {
     case '/':
       return <HomeScreen />
     case '/board':
-      return <Placeholder title="У доски" />
+      return <Board />
     case '/capture':
       return <Placeholder title="Захват карты" />
     case '/speedrun':
