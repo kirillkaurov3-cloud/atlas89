@@ -10,6 +10,7 @@ import { Capture } from './modes/capture/Capture'
 import { Speedrun } from './modes/speedrun/Speedrun'
 import { Stats } from './screens/Stats'
 import { Settings } from './screens/Settings'
+import { Leaderboard } from './screens/Leaderboard'
 import { Toasts } from './components/Toasts'
 
 function screenFor(path: string): ReactNode {
@@ -27,6 +28,8 @@ function screenFor(path: string): ReactNode {
       return <Reference />
     case '/stats':
       return <Stats />
+    case '/leaderboard':
+      return <Leaderboard />
     case '/settings':
       return <Settings />
     default:

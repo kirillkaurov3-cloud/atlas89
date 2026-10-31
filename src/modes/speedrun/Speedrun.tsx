@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { leaderboard, rememberMine } from '../../leaderboard/service'
 import { REGIONS, REGION_BY_ID } from '../../data/regions'
 import { APP_NAME } from '../../config'
 import { Icon } from '../../components/Icon'
@@ -129,6 +130,12 @@ export function Speedrun() {
           </p>
         )}
 
+        {leaderboard.enabled && (
+          <button className="btn btn-ghost" onClick={() => navigate('/leaderboard')}>
+            <Icon name="trophy" size={18} /> Таблица лидеров
+          </button>
+        )}
+
         {sr.best != null && (
           <section className={`glass ${q.section} ${s.bestRow}`}>
             <Icon name="trophy" size={20} />
@@ -186,6 +193,34 @@ function Result({
   const [nick, setNick] = useState(nickname ?? '')
   const isRecord = prevBest == null || result.totalMs < prevBest
   const diff = challenge ? result.totalMs - challenge.ms : 0
+  const [lb, setLb] = useState<{ state: 'idle' | 'sending' | 'done' | 'error'; msg?: string }>({ state: 'idle' })
+  const submitted = useRef(false)
+
+  const submit = async (name: string) => {
+    if (!leaderboard.enabled || submitted.current) return
+    if (name.length < 2) return setLb({ state: 'error', msg: 'Ник — от 2 символов' })
+    submitted.current = true
+    setLb({ state: 'sending' })
+    try {
+      const row = await leaderboard.submit({
+        nickname: name,
+        mode: 'speedrun',
+        time_ms: result.totalMs,
+        accuracy: ((result.ids.length - result.missed.length) / result.ids.length) * 100,
+      })
+      if (row) rememberMine(row.id)
+      setLb({ state: 'done' })
+    } catch (e) {
+      submitted.current = false
+      setLb({ state: 'error', msg: (e as Error).message })
+    }
+  }
+
+  // ник уже есть — отправляем автоматически
+  useEffect(() => {
+    if (nickname) void submit(nickname)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const share = async () => {
     const name = nick.trim().slice(0, 20)
@@ -257,6 +292,27 @@ function Result({
             Друг откроет ссылку, пройдёт тот же порядок регионов и увидит, чей результат лучше. Сервер не нужен.
           </p>
         </section>
+
+        {leaderboard.enabled && (
+          <section className={`glass ${q.section}`}>
+            <h2 className={q.sectionTitle}>Таблица лидеров</h2>
+            {lb.state === 'done' ? (
+              <p className={q.lead}>Результат в таблице лидеров!</p>
+            ) : lb.state === 'sending' ? (
+              <p className={q.lead}>Отправляем…</p>
+            ) : (
+              <>
+                {lb.state === 'error' && <p className={q.lead} style={{ color: 'var(--coral)', marginBottom: 8 }}>{lb.msg}</p>}
+                <button className="btn btn-ghost" style={{ width: '100%' }} onClick={() => submit(nick.trim().slice(0, 20))}>
+                  {nick.trim() ? `Отправить как «${nick.trim()}»` : 'Впиши имя выше и отправь'}
+                </button>
+              </>
+            )}
+            <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => navigate('/leaderboard')}>
+              <Icon name="trophy" size={18} /> Открыть таблицу
+            </button>
+          </section>
+        )}
 
         {result.missed.length > 0 && (
           <section className={`glass ${q.section}`}>
