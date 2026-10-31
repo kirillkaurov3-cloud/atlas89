@@ -11,7 +11,8 @@
     "validate": "node --disable-warning=ExperimentalWarning scripts/validate-map.mjs",
     "map:fetch": "node scripts/fetch-sources.mjs",
     "map:build": "node --disable-warning=ExperimentalWarning scripts/build-map.mjs && npm run validate",
-    "map:relief": "node --disable-warning=ExperimentalWarning scripts/build-relief.mjs"
+    "map:relief": "node --disable-warning=ExperimentalWarning scripts/build-relief.mjs",
+    "assets": "node scripts/build-assets.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

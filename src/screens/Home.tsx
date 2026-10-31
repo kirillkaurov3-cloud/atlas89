@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { APP_NAME, APP_TAGLINE, TOTAL_REGIONS } from '../config'
 import { Icon, type IconName } from '../components/Icon'
@@ -13,7 +13,7 @@ interface Mode {
   title: string
   text: string
   icon: IconName
-  tone: 'lime' | 'violet' | 'sky' | 'amber'
+  tone: 'lime' | 'violet' | 'sky' | 'amber' | 'coral'
   badge?: string
 }
 
@@ -21,7 +21,8 @@ const MODES: Mode[] = [
   { path: '/board', title: 'У доски', text: 'Как на зачёте: регион, таймер, сразу столица', icon: 'pointer', tone: 'lime', badge: 'Главный' },
   { path: '/capture', title: 'Захват карты', text: 'Учи с повторением и закрашивай Россию', icon: 'flag', tone: 'violet' },
   { path: '/speedrun', title: 'Спидран 89', text: 'Все регионы на время и вызов другу', icon: 'bolt', tone: 'amber' },
-  { path: '/reference', title: 'Справочник', text: 'Регионы, столицы, соседи', icon: 'book', tone: 'sky' },
+  { path: '/reference', title: 'Справочник', text: 'Регионы, столицы, поиск', icon: 'book', tone: 'sky' },
+  { path: '/neighbors', title: 'Соседи', text: 'Покажи всех соседей региона', icon: 'neighbors', tone: 'coral' },
 ]
 
 export function Home({ mapSlot, captured = 0 }: { mapSlot?: ReactNode; captured?: number }) {
@@ -73,7 +74,7 @@ export function Home({ mapSlot, captured = 0 }: { mapSlot?: ReactNode; captured?
 function ModeCard({ mode, index }: { mode: Mode; index: number }) {
   return (
     <motion.button
-      className={`glass ${s.card} ${s[mode.tone]} ${index === 0 ? s.featured : ''} ${index === MODES.length - 1 ? s.wide : ''}`}
+      className={`glass ${s.card} ${s[mode.tone]} ${index === 0 ? s.featured : ''}`}
       onClick={() => navigate(mode.path)}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}

@@ -7,7 +7,7 @@ import { toast } from '../components/Toasts'
 import { exportProgress, importProgress } from '../lib/backup'
 import { navigate } from '../lib/router'
 import { resetState, updateProfile, updateSettings, useStore, type Settings as S } from '../lib/store'
-import { Seg } from '../modes/board/Board'
+import { Seg } from '../components/Seg'
 import s from './Settings.module.css'
 
 const DISPUTED = ['moscow-oblast', 'leningrad', 'zaporozhye', 'kherson']

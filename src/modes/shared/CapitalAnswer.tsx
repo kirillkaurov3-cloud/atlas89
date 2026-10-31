@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { suggestCapitals } from '../../lib/quiz'
 import s from './Quiz.module.css'

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { DISTRICTS, REGIONS, REGION_BY_ID } from '../data/regions'
 import { Badge } from '../components/Badge'
 import { Icon } from '../components/Icon'

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useState } from 'react'
 import { DISTRICT_BY_ID, REGION_BY_ID, type DistrictId } from '../../data/regions'
 import { Icon } from '../../components/Icon'
@@ -9,6 +9,7 @@ import { navigate } from '../../lib/router'
 import { setState, updateSettings, useStore, type Settings } from '../../lib/store'
 import { plural } from '../../lib/text'
 import { BoardGame, type QResult } from './BoardGame'
+import { Seg } from '../../components/Seg'
 import { preferredCapital } from '../../lib/capitals'
 import q from '../shared/Quiz.module.css'
 
@@ -158,26 +159,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className={q.sectionTitle}>{title}</h2>
       {children}
     </section>
-  )
-}
-
-export function Seg<T extends string | number>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T
-  options: { v: T; label: string }[]
-  onChange: (v: T) => void
-}) {
-  return (
-    <div className={q.seg} role="group">
-      {options.map((o) => (
-        <button key={String(o.v)} className={q.segBtn} aria-pressed={o.v === value} onClick={() => onChange(o.v)}>
-          {o.label}
-        </button>
-      ))}
-    </div>
   )
 }
 

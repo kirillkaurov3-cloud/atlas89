@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DISTRICT_BY_ID, REGIONS, REGION_BY_ID, type DistrictId } from '../../data/regions'
 import { Icon } from '../../components/Icon'

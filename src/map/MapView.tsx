@@ -112,6 +112,7 @@ export function MapView(props: Props) {
   const fitS = useRef(0.05)
   const anim = useRef<number | null>(null)
   const hoverId = useRef<string | null>(null)
+  const pending = useRef<(() => void) | null>(null)
   const pad = useMemo<Padding>(
     () => ({ top: 0, right: 0, bottom: 0, left: 0, ...padding }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,6 +222,11 @@ export function MapView(props: Props) {
     cameraRef,
     () => ({
       flyTo(target, opts = {}) {
+        // карта ещё не измерена — выполним после первого измерения
+        if (!size.current.w) {
+          pending.current = () => this.flyTo(target, opts)
+          return
+        }
         const rect = resolveRect(target)
         if (!rect) return
         animateTo(frameFor(rect, opts.fill ?? 0.6, opts.maxZoom ?? 14), opts.duration ?? 900)
@@ -270,6 +276,11 @@ export function MapView(props: Props) {
         cam.current = clamp({ s: sc, tx: r.width / 2 - cx * sc, ty: r.height / 2 - cy * sc })
       }
       apply()
+      if (pending.current) {
+        const fn = pending.current
+        pending.current = null
+        fn()
+      }
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -530,7 +541,7 @@ export function MapView(props: Props) {
       ref={wrapRef}
       className={`${s.wrap} ${styleMode === 'board' ? s.board : s.study} ${palette === 'neutral' ? s.neutral : ''} ${ambient ? s.ambient : ''} ${className ?? ''}`}
     >
-      <svg ref={svgRef} className={s.svg} role="img" aria-label={ariaLabel}>
+      <svg ref={svgRef} className={s.svg} role="group" aria-label={ariaLabel}>
         <g ref={gRef}>
           {styleMode === 'board' && <rect className={s.sea} x={-viewW} y={-viewH} width={viewW * 3} height={viewH * 3} />}
           <EdgeFade id={uid} w={viewW} h={viewH} />
@@ -544,7 +555,7 @@ export function MapView(props: Props) {
               <path className={s.land} d={data.land} />
             </g>
           </g>
-          <Regions data={data} states={states} ambient={ambient} />
+          <Regions data={data} states={states} />
           <path className={s.lakes} d={data.lakes} />
           <path className={s.rivers} d={data.rivers} />
           {insetFrames &&
@@ -561,6 +572,7 @@ export function MapView(props: Props) {
           <Effects data={data} effects={effects} />
         </g>
       </svg>
+      {ambient && <div className={s.sweep} aria-hidden="true" />}
       {hoverLabel && <div ref={labelRef} className={s.hoverLabel} aria-hidden="true" />}
       {controls && (
         <div className={s.controls}>
@@ -617,11 +629,9 @@ function EdgeFade({ id, w, h }: { id: string; w: number; h: number }) {
 const Regions = memo(function Regions({
   data,
   states,
-  ambient,
 }: {
   data: MapData
   states?: Record<string, RegionState | undefined>
-  ambient: boolean
 }) {
   return (
     <g className={s.regions}>
@@ -636,10 +646,9 @@ const Regions = memo(function Regions({
             className={`${s.region} ${s['d_' + meta?.district]}`}
             d={g.d}
             fillRule="evenodd"
-            style={ambient ? ({ '--wx': (g.c[0] / data.width).toFixed(3) } as React.CSSProperties) : undefined}
-          >
-            <title>{meta?.name}</title>
-          </path>
+            role="img"
+            aria-label={meta?.name}
+          />
         )
       })}
     </g>

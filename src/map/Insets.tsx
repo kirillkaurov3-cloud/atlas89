@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { memo, useRef } from 'react'
 import { REGION_BY_ID } from '../data/regions'
 import { Icon } from '../components/Icon'
@@ -99,7 +99,7 @@ const Inset = memo(function Inset({
           viewBox={`${x0} ${y0} ${w} ${h}`}
           preserveAspectRatio="xMidYMid meet"
           onClick={onClick}
-          role="img"
+          role="group"
           aria-label={`Врезка: ${inset.title}`}
           style={{ ['--px' as string]: String(w / 300) }}
         >
@@ -128,9 +128,9 @@ const Inset = memo(function Inset({
                   className={`${m.region} ${m['d_' + meta?.district]}`}
                   d={g.d}
                   fillRule="evenodd"
-                >
-                  <title>{meta?.name}</title>
-                </path>
+                  role="img"
+                  aria-label={meta?.name}
+                />
               )
             })}
           </g>

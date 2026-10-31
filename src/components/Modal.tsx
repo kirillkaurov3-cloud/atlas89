@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import s from './Modal.module.css'

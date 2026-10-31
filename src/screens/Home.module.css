@@ -212,6 +212,10 @@
   --tone: var(--sky);
   --tone-ink: #04202a;
 }
+.coral {
+  --tone: var(--coral);
+  --tone-ink: #fff;
+}
 .amber {
   --tone: var(--amber);
   --tone-ink: #2a1a00;

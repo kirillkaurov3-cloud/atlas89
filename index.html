@@ -6,6 +6,21 @@
     <meta name="theme-color" content="#070A16" />
     <meta name="description" content="Тренажёр субъектов РФ: найди регион на карте и назови столицу. Все 89 субъектов, режим «Как на доске», спидран и вызов другу." />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Атлас 89" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:title" content="Атлас 89 — найди регион и назови столицу" />
+    <meta property="og:description" content="Тренажёр к зачёту по географии: все 89 субъектов РФ, режим «Как на доске», спидран и вызов другу." />
+    <meta property="og:url" content="%SITE_URL%" />
+    <meta property="og:image" content="%SITE_URL%og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <title>Атлас 89</title>
     <script>
       // Тема до первой отрисовки, чтобы не мигало
@@ -18,7 +33,12 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Заставка до загрузки JS: сразу видно, что сайт открылся -->
+      <div style="min-height:100vh;display:grid;place-items:center;font:700 22px/1.2 system-ui,sans-serif;color:var(--text)">
+        <div style="display:flex;align-items:center;gap:12px"><img src="./favicon.svg" width="44" height="44" alt="" />Атлас 89</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

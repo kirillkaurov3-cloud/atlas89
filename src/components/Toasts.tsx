@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { useSyncExternalStore, type ReactNode } from 'react'
 import s from './Toasts.module.css'
 
@@ -41,7 +41,6 @@ export function Toasts() {
         {items.map((t) => (
           <motion.div
             key={t.id}
-            layout
             className={`glass ${s.toast} ${s[t.tone ?? 'lime']}`}
             initial={{ opacity: 0, y: -24, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

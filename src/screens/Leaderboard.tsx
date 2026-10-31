@@ -4,7 +4,7 @@ import { leaderboard, mineIds, type LbPeriod, type ScoreRow } from '../leaderboa
 import { navigate } from '../lib/router'
 import { formatTime } from '../lib/share'
 import { useStore } from '../lib/store'
-import { Seg } from '../modes/board/Board'
+import { Seg } from '../components/Seg'
 import s from './Leaderboard.module.css'
 
 /** Топ-50 спидрана за неделю и за всё время. Экран существует только при включённой таблице. */

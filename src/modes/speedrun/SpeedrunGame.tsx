@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { REGION_BY_ID } from '../../data/regions'
 import { MapLayout } from '../../components/MapLayout'

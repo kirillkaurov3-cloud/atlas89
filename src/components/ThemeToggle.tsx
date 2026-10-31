@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { updateSettings, useStore } from '../lib/store'
 import { Icon } from './Icon'
 

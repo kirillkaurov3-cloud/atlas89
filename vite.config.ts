@@ -13,9 +13,24 @@ function resolveBase(): string {
   return `/${repo}/`
 }
 
+/** Полный адрес сайта для Open Graph (превью ссылки в мессенджерах требует абсолютный URL). */
+function siteUrl(base: string): string {
+  if (process.env.VITE_SITE_URL) return process.env.VITE_SITE_URL
+  const owner = process.env.GITHUB_REPOSITORY?.split('/')[0]
+  return owner ? `https://${owner.toLowerCase()}.github.io${base}` : base
+}
+
+const base = resolveBase()
+
 export default defineConfig({
-  base: resolveBase(),
-  plugins: [react()],
+  base,
+  plugins: [
+    react(),
+    {
+      name: 'site-url',
+      transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', siteUrl(base)),
+    },
+  ],
   build: {
     target: 'es2020',
     cssTarget: ['chrome90', 'safari14', 'firefox90'],
