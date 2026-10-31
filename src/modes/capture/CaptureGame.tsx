@@ -38,7 +38,10 @@ export interface CaptureSummary {
 interface Props {
   scope: DistrictId | 'all'
   session: number
+  /** Infinity — без конца, пока не выйдешь */
   length: number
+  /** Быстрый режим: без ожидания следующей сессии и следующего дня */
+  fast: boolean
   onFinish: (s: CaptureSummary) => void
   onExit: () => void
 }
@@ -59,7 +62,7 @@ function identifyOptions(id: string, neighbors: string[]): string[] {
   return shuffle([id, ...out])
 }
 
-export function CaptureGame({ scope, session, length, onFinish, onExit }: Props) {
+export function CaptureGame({ scope, session, length, fast, onFinish, onExit }: Props) {
   const data = useMapData()
   const settings = useStore((s) => s.settings)
   const capture = useCapture()
@@ -70,7 +73,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
   const inScope = useMemo(() => new Set(pool), [pool])
 
   const [qn, setQn] = useState(0)
-  const [id, setId] = useState<string | null>(() => pickNext({ pool, session, qn: 0 }))
+  const [id, setId] = useState<string | null>(() => pickNext({ pool, session, qn: 0, fast }))
   const [phase, setPhase] = useState<Phase | null>(null)
   const [effects, setEffects] = useState<MapEffect[]>([])
   const [typed, setTyped] = useState<{ ok: boolean; correct: string } | null>(null)
@@ -89,24 +92,12 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
     setTimeout(() => setEffects((e) => e.filter((x) => x.key !== key)), ttl)
   }
 
-  // Камера: в начале — к округу
-  useEffect(() => {
-    if (!data || scope === 'all') return
-    const t = setTimeout(() => camera.current?.flyTo(pool, { duration: 1100, fill: 0.9, maxZoom: 30 }), 250)
-    return () => clearTimeout(t)
-  }, [data, scope, pool])
-
   // Новый вопрос
   useEffect(() => {
     if (!id || !data) return
     const level = capture.cards[id]?.level ?? 0
     // новые регионы — сначала «узнай» (легче), дальше — «найди» (вспомнить самому)
     const type: QType = level === 0 && !(capture.cards[id]?.wins ?? 0) ? 'identify' : qn % 3 === 2 ? 'identify' : 'find'
-    if (type === 'identify') {
-      const view = camera.current?.getView()
-      savedView.current = view ?? null
-      camera.current?.flyTo(id, { duration: 800, fill: 0.35, maxZoom: scope === 'all' ? 6 : 12 })
-    }
     setPhase({
       k: 'place',
       type,
@@ -118,7 +109,20 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, data])
 
+  // «Что за регион подсвечен?» — подлетаем к нему, когда вопрос уже на экране (карта точно существует)
+  const placeKey = phase?.k === 'place' && phase.type === 'identify' ? phase.startedAt : 0
+  useEffect(() => {
+    if (!placeKey || !id) return
+    rememberView()
+    camera.current?.flyTo(id, { duration: 800, fill: 0.35, maxZoom: scope === 'all' ? 6 : 12 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeKey])
+
+  /** Базовый вид, куда вернуть камеру после облёта. Запоминаем один раз — не промежуточный кадр полёта. */
   const savedView = useRef<ReturnType<MapCamera['getView']> | null>(null)
+  const rememberView = () => {
+    if (!savedView.current) savedView.current = camera.current?.getView() ?? null
+  }
   const restoreView = () => {
     if (savedView.current) {
       camera.current?.setView(savedView.current, 600)
@@ -128,7 +132,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
 
   const finishCard = (ok: boolean) => {
     if (!id) return
-    const res = applyResult(id, ok, session, qn)
+    const res = applyResult(id, ok, session, qn, fast)
     summary.current.asked++
     if (ok) summary.current.ok++
     if (res.justCaptured) {
@@ -144,7 +148,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
     restoreView()
     const nq = qn + 1
     if (summary.current.asked >= length) return onFinish(summary.current)
-    const nextId = pickNext({ pool, session, qn: nq, lastId: id ?? undefined })
+    const nextId = pickNext({ pool, session, qn: nq, lastId: id ?? undefined, fast })
     if (!nextId) return onFinish(summary.current)
     setQn(nq)
     if (nextId === id) {
@@ -185,7 +189,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
       addEffect(id, 'trace', 2000)
     } else {
       addEffect(rid, 'shake', 1200)
-      savedView.current = camera.current?.getView() ?? null
+      rememberView()
       camera.current?.flyTo(id, { duration: 1200, fill: 0.45, maxZoom: 10 })
     }
     toCapitalOrFinish(ok)
@@ -278,9 +282,9 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
         <FeedbackLine phase={phase} capital={correctCapital} />
       </div>
       <span className={q.counter}>
-        {Math.min(summary.current.asked + 1, length)}/{length}
+        {Number.isFinite(length) ? `${Math.min(summary.current.asked + 1, length)}/${length}` : `№ ${summary.current.asked + 1}`}
       </span>
-      <span className={q.roundBar} style={{ width: `${(summary.current.asked / length) * 100}%` }} />
+      {Number.isFinite(length) && <span className={q.roundBar} style={{ width: `${(summary.current.asked / length) * 100}%` }} />}
     </div>
   )
 
@@ -328,7 +332,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
   return (
     <MapLayout
       title={scope === 'all' ? 'Захват карты' : `Захват: ${DISTRICT_BY_ID[scope].short}`}
-      onBack={onExit}
+      onBack={() => (summary.current.asked ? onFinish(summary.current) : onExit())}
       headerRight={
         <>
           <span className={`chip ${c.capChip}`}>
@@ -349,6 +353,7 @@ export function CaptureGame({ scope, session, length, onFinish, onExit }: Props)
             onRegionClick={onRegion}
             selectable={(rid) => inScope.has(rid)}
             cameraRef={camera}
+            initialFocus={scope === 'all' ? undefined : pool}
             insetFrames
           />
         )

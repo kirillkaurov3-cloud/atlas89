@@ -20,6 +20,7 @@ export function Capture() {
   const scope = useStore((s) => (s.captureScope as DistrictId | 'all' | undefined) ?? 'all')
   const mapStyle = useStore((s) => s.settings.mapStyle)
   const [length, setLength] = useState(15)
+  const fast = useStore((s) => (s.captureFast as boolean | undefined) ?? false)
   const [stage, setStage] = useState<Stage>({ k: 'intro' })
 
   const start = () => setStage({ k: 'play', session: startSession(), key: Date.now() })
@@ -31,6 +32,7 @@ export function Capture() {
         scope={scope}
         session={stage.session}
         length={length}
+        fast={fast}
         onExit={() => setStage({ k: 'intro' })}
         onFinish={(summary) => {
           emit('round', {
@@ -102,9 +104,38 @@ export function Capture() {
 
         <section className={`glass ${q.section}`}>
           <h2 className={q.sectionTitle}>Длина сессии</h2>
-          <Seg value={length} options={[{ v: 10, label: '10' }, { v: 15, label: '15' }, { v: 30, label: '30' }]} onChange={setLength} />
+          <Seg
+            value={length}
+            options={[
+              { v: 10, label: '10' },
+              { v: 15, label: '15' },
+              { v: 30, label: '30' },
+              { v: Infinity, label: 'Без конца' },
+            ]}
+            onChange={setLength}
+          />
+          {!Number.isFinite(length) && (
+            <p className={q.lead} style={{ fontSize: 13, marginTop: 10 }}>
+              Играй сколько хочешь — кнопка «Назад» завершит сессию и покажет итоги.
+            </p>
+          )}
+        </section>
+
+        <section className={`glass ${q.section}`}>
+          <h2 className={q.sectionTitle}>Перерывы между повторениями</h2>
+          <Seg
+            value={fast ? 'fast' : 'spaced'}
+            options={[
+              { v: 'spaced' as const, label: 'С перерывами' },
+              { v: 'fast' as const, label: 'Быстрый режим' },
+            ]}
+            onChange={(v) => setState({ captureFast: v === 'fast' })}
+          />
           <p className={q.lead} style={{ fontSize: 13, marginTop: 10 }}>
-            Регион захвачен, когда ты верно назовёшь место и столицу 4 раза с перерывами: сразу, через несколько вопросов, в следующий раз и через день. Ошибки возвращаются чаще.
+            {fast
+              ? 'Без ожидания: регион возвращается через 3, 6, 10 и 15 вопросов — всю карту можно захватить за один вечер. Запоминается хуже, чем с перерывами.'
+              : 'Регион захвачен, когда ты верно назовёшь место и столицу 4 раза с перерывами: через несколько вопросов, в следующий раз, через день и через 3 дня. Так запоминается надолго.'}{' '}
+            Новые регионы приходят без ограничений — можно учить сразу все. Ошибки возвращаются чаще.
           </p>
         </section>
 

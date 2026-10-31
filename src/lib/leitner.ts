@@ -13,6 +13,10 @@
  *   4      — регион ЗАХВАЧЕН; контрольное повторение через 7 дней
  * Ошибка: уровень сбрасывается в 0 (захваченный — откатывается на 2),
  * регион вернётся через 2 вопроса — ошибочные приходят чаще.
+ *
+ * Быстрый режим (переключатель): без ожидания между сессиями и днями —
+ * интервалы считаются в вопросах: +3 → +6 → +10 → +15, и всю карту
+ * можно захватить за один вечер.
  */
 import { REGIONS, type DistrictId } from '../data/regions'
 import { emit } from './events'
@@ -20,6 +24,8 @@ import { getState, setState, useStore, type AppState } from './store'
 
 export const CAPTURED_LEVEL = 4
 const DAY = 24 * 60 * 60 * 1000
+/** Быстрый режим: через сколько вопросов спросить снова на уровнях 0→1, 1→2, 2→3, 3→4 */
+const FAST_GAPS = [3, 6, 10, 15]
 
 export interface Card {
   level: number
@@ -84,7 +90,14 @@ function newCard(): Card {
 }
 
 /** Применить результат попытки. Возвращает обновлённую карточку и «был ли только что захвачен». */
-export function applyResult(id: string, ok: boolean, session: number, qn: number, now = Date.now()): { card: Card; justCaptured: boolean; lost: boolean } {
+export function applyResult(
+  id: string,
+  ok: boolean,
+  session: number,
+  qn: number,
+  fast = false,
+  now = Date.now(),
+): { card: Card; justCaptured: boolean; lost: boolean } {
   const cs = getCapture()
   const prev = cs.cards[id] ?? newCard()
   const c: Card = { ...prev }
@@ -98,7 +111,10 @@ export function applyResult(id: string, ok: boolean, session: number, qn: number
     c.dueQ = 0
     c.dueSession = 0
     c.dueAt = 0
-    if (from === 0) {
+    if (fast && from < CAPTURED_LEVEL) {
+      if (from + 1 < CAPTURED_LEVEL) c.dueQ = qn + FAST_GAPS[from]
+      else c.dueAt = now + 7 * DAY
+    } else if (from === 0) {
       c.dueQ = qn + 3
     } else if (from === 1) {
       c.dueSession = session + 1
@@ -127,8 +143,10 @@ export function applyResult(id: string, ok: boolean, session: number, qn: number
   return { card: c, justCaptured, lost }
 }
 
-export function isDue(c: Card, session: number, qn: number, now = Date.now()): boolean {
+export function isDue(c: Card, session: number, qn: number, fast = false, now = Date.now()): boolean {
   if (c.qSession === session && c.dueQ > 0) return qn >= c.dueQ
+  // быстрый режим: незахваченные не ждут следующей сессии и следующего дня
+  if (fast && c.level < CAPTURED_LEVEL) return true
   if (c.dueSession && session < c.dueSession) return false
   if (c.dueAt && now < c.dueAt) return false
   // карточка уровня 0 из прошлой сессии — сразу
@@ -138,7 +156,7 @@ export function isDue(c: Card, session: number, qn: number, now = Date.now()): b
 /**
  * Следующий регион для вопроса:
  *  1) просроченные/подошедшие карточки (сначала с ошибками, затем по уровню);
- *  2) новые регионы, если «в изучении» меньше 6;
+ *  2) новые регионы — без ограничений, можно учить сразу все;
  *  3) иначе — ближайшая по очереди в сессии (чтобы не стоять на месте).
  */
 export function pickNext(opts: {
@@ -146,14 +164,14 @@ export function pickNext(opts: {
   session: number
   qn: number
   lastId?: string
+  fast?: boolean
   rand?: () => number
 }): string | null {
-  const { pool, session, qn, lastId, rand = Math.random } = opts
+  const { pool, session, qn, lastId, fast = false, rand = Math.random } = opts
   const cs = getCapture()
   const now = Date.now()
   const due: [number, string][] = []
   const fresh: string[] = []
-  let learning = 0
   const waitingInSession: [number, string][] = []
   for (const id of pool) {
     const c = cs.cards[id]
@@ -161,24 +179,19 @@ export function pickNext(opts: {
       fresh.push(id)
       continue
     }
-    if (c.level > 0 && c.level < CAPTURED_LEVEL) learning++
     if (c.level === 0 && c.wins === 0 && c.lapses === 0) {
       fresh.push(id)
       continue
     }
     if (id === lastId) continue
-    if (isDue(c, session, qn, now)) {
+    if (isDue(c, session, qn, fast, now)) {
       // приоритет: больше ошибок и меньше уровень — раньше
       due.push([c.level * 10 - c.lapses * 3 + rand(), id])
     } else if (c.qSession === session && c.dueQ > 0) waitingInSession.push([c.dueQ, id])
   }
   if (due.length) return due.sort((a, b) => a[0] - b[0])[0][1]
-  if (fresh.length && learning < 6) {
-    // новые — в случайном порядке, но соседние по карте интереснее учить вместе: просто случайно
-    return fresh[Math.floor(rand() * fresh.length)]
-  }
-  if (waitingInSession.length) return waitingInSession.sort((a, b) => a[0] - b[0])[0][1]
   if (fresh.length) return fresh[Math.floor(rand() * fresh.length)]
+  if (waitingInSession.length) return waitingInSession.sort((a, b) => a[0] - b[0])[0][1]
   return null
 }
 

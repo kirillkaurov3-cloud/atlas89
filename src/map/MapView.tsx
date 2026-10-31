@@ -73,6 +73,8 @@ interface Props {
 
 const MIN_ZOOM = 0.85
 const MAX_ZOOM = 48
+/** Запас отрисовки SVG за краями экрана (доля размера) */
+const MARGIN = 0.3
 
 interface Cam {
   s: number
@@ -113,6 +115,12 @@ export function MapView(props: Props) {
   const anim = useRef<number | null>(null)
   const hoverId = useRef<string | null>(null)
   const pending = useRef<(() => void) | null>(null)
+  /** Кадр, с которым SVG реально нарисована; во время движения поверх него — CSS-трансформация */
+  const committed = useRef<Cam>({ s: 0.05, tx: 0, ty: 0 })
+  /** Куда летит камера (чтобы getView во время полёта возвращал цель, а не промежуточный кадр) */
+  const animTarget = useRef<Cam | null>(null)
+  /** Идёт ли жест / инерция / колесо (тогда не перерисовываем SVG на каждом кадре) */
+  const gesture = useRef({ drag: false, inertia: false, wheel: 0 as ReturnType<typeof setTimeout> | 0 })
   const pad = useMemo<Padding>(
     () => ({ top: 0, right: 0, bottom: 0, left: 0, ...padding }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,12 +134,52 @@ export function MapView(props: Props) {
   live.current = { onRegionClick, selectable, hover, hoverLabel, interactive }
 
   // ---------- Камера ----------
-  const apply = useCallback(() => {
+  // SVG рисуется с запасом MARGIN с каждой стороны, чтобы при сдвиге «картинкой» не было пустых краёв.
+  const margin = () => ({ x: size.current.w * MARGIN, y: size.current.h * MARGIN })
+
+  /** Перерисовать SVG в текущем кадре (дорого: растеризация всей карты). */
+  const commit = useCallback(() => {
     const { s: sc, tx, ty } = cam.current
-    gRef.current?.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${sc.toFixed(6)})`)
-    svgRef.current?.style.setProperty('--px', String(1 / sc))
-    svgRef.current?.style.setProperty('--zoom', String(sc / fitS.current))
+    const m = margin()
+    gRef.current?.setAttribute('transform', `translate(${(tx + m.x).toFixed(2)} ${(ty + m.y).toFixed(2)}) scale(${sc.toFixed(6)})`)
+    const svg = svgRef.current
+    if (svg) {
+      svg.style.transform = ''
+      svg.style.setProperty('--px', String(1 / sc))
+      svg.style.setProperty('--zoom', String(sc / fitS.current))
+    }
+    committed.current = { ...cam.current }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const isMoving = () => anim.current != null || gesture.current.drag || gesture.current.inertia || !!gesture.current.wheel
+
+  /** Показать текущий кадр: в движении — дешёвой CSS-трансформацией уже нарисованной SVG. */
+  const apply = useCallback(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    if (!isMoving()) return commit()
+    const c = cam.current
+    const b = committed.current
+    const k = c.s / b.s
+    const dx = c.tx - k * b.tx
+    const dy = c.ty - k * b.ty
+    const m = margin()
+    const { w, h } = size.current
+    // покрывает ли растянутая картинка весь экран и не слишком ли она «мыльная»
+    const covers = dx - k * m.x <= 0.5 && dy - k * m.y <= 0.5 && dx + k * (w + m.x) >= w - 0.5 && dy + k * (h + m.y) >= h - 0.5
+    // в полёте кадр заранее подобран с запасом — терпим сильнее растянутую (чуть «мыльную») картинку
+    const [kMin, kMax] = anim.current != null ? [0.125, 8] : [0.6, 2.4]
+    if (!covers || k > kMax || k < kMin) return commit()
+    svg.style.transform = `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(2)}px, 0) scale(${k.toFixed(5)})`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commit])
+
+  /** Движение закончилось — один раз перерисовать начисто. */
+  const settle = useCallback(() => {
+    if (!isMoving()) commit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commit])
 
   const clamp = useCallback(
     (c: Cam): Cam => {
@@ -170,6 +218,7 @@ export function MapView(props: Props) {
   const stopAnim = () => {
     if (anim.current != null) cancelAnimationFrame(anim.current)
     anim.current = null
+    animTarget.current = null
   }
 
   const animateTo = useCallback(
@@ -180,10 +229,33 @@ export function MapView(props: Props) {
       const to = clamp(target)
       if (reduce || duration <= 0) {
         cam.current = to
-        apply()
+        commit()
         return
       }
+      animTarget.current = to
       const { w, h } = size.current
+      // Заранее рисуем кадр, который покрывает и начало, и конец полёта (с учётом запаса),
+      // чтобы весь полёт шёл CSS-трансформацией без перерисовки карты.
+      const vis = (c: Cam) => [-c.tx / c.s, -c.ty / c.s, (w - c.tx) / c.s, (h - c.ty) / c.s]
+      const a = vis(from)
+      const bb = vis(to)
+      const u = [Math.min(a[0], bb[0]), Math.min(a[1], bb[1]), Math.max(a[2], bb[2]), Math.max(a[3], bb[3])]
+      const env = Math.min(from.s, to.s, (w * (1 + 2 * MARGIN)) / (u[2] - u[0]), (h * (1 + 2 * MARGIN)) / (u[3] - u[1]))
+      const envCam = { s: env, tx: w / 2 - ((u[0] + u[2]) / 2) * env, ty: h / 2 - ((u[1] + u[3]) / 2) * env }
+      const cmt = committed.current
+      const coversAll = (c: Cam) => {
+        const k = c.s / cmt.s
+        const dx = c.tx - k * cmt.tx
+        const dy = c.ty - k * cmt.ty
+        const mx = w * MARGIN
+        const my = h * MARGIN
+        return k <= 8 && k >= 0.125 && dx - k * mx <= 0.5 && dy - k * my <= 0.5 && dx + k * (w + mx) >= w - 0.5 && dy + k * (h + my) >= h - 0.5
+      }
+      if (!(coversAll(from) && coversAll(to))) {
+        cam.current = envCam
+        commit()
+        cam.current = from
+      }
       // интерполируем центр и логарифм масштаба — полёт выглядит естественно
       const c0 = [(w / 2 - from.tx) / from.s, (h / 2 - from.ty) / from.s]
       const c1 = [(w / 2 - to.tx) / to.s, (h / 2 - to.ty) / to.s]
@@ -198,13 +270,18 @@ export function MapView(props: Props) {
         const cx = c0[0] + (c1[0] - c0[0]) * e
         const cy = c0[1] + (c1[1] - c0[1]) * e
         cam.current = { s: sc, tx: w / 2 - cx * sc, ty: h / 2 - cy * sc }
-        apply()
-        if (t < 1) anim.current = requestAnimationFrame(step)
-        else anim.current = null
+        if (t < 1) {
+          apply()
+          anim.current = requestAnimationFrame(step)
+        } else {
+          anim.current = null
+          animTarget.current = null
+          settle()
+        }
       }
       anim.current = requestAnimationFrame(step)
     },
-    [apply, clamp],
+    [apply, clamp, commit, settle],
   )
 
   const fitAll = useCallback(() => frameFor([0, 0, data.width, data.height], 1, 99), [frameFor, data.width, data.height])
@@ -235,7 +312,7 @@ export function MapView(props: Props) {
         animateTo(fitAll(), duration)
       },
       getView() {
-        return { ...cam.current }
+        return { ...(animTarget.current ?? cam.current) }
       },
       setView(v, duration = 700) {
         animateTo(v, duration)
@@ -260,6 +337,16 @@ export function MapView(props: Props) {
       if (r.width < 2 || r.height < 2) return
       const prev = size.current
       size.current = { w: r.width, h: r.height }
+      const svg = svgRef.current
+      if (svg) {
+        Object.assign(svg.style, {
+          left: `${-r.width * MARGIN}px`,
+          top: `${-r.height * MARGIN}px`,
+          width: `${r.width * (1 + 2 * MARGIN)}px`,
+          height: `${r.height * (1 + 2 * MARGIN)}px`,
+          transformOrigin: `${r.width * MARGIN}px ${r.height * MARGIN}px`,
+        })
+      }
       const p = padRef.current
       fitS.current = Math.min((r.width - p.left - p.right) / data.width, (r.height - p.top - p.bottom) / data.height)
       if (first) {
@@ -275,7 +362,7 @@ export function MapView(props: Props) {
         const sc = c.s * (ratio < 1 ? ratio : 1)
         cam.current = clamp({ s: sc, tx: r.width / 2 - cx * sc, ty: r.height / 2 - cy * sc })
       }
-      apply()
+      commit()
       if (pending.current) {
         const fn = pending.current
         pending.current = null
@@ -309,7 +396,7 @@ export function MapView(props: Props) {
 
   // ---------- Жесты ----------
   useEffect(() => {
-    const svg = svgRef.current
+    const svg = wrapRef.current
     if (!svg) return
     const pointers = new Map<number, { x: number; y: number }>()
     let start: { x: number; y: number; t: number; moved: boolean; multi: boolean; type: string } | null = null
@@ -326,6 +413,7 @@ export function MapView(props: Props) {
     const stopInertia = () => {
       if (inertia != null) cancelAnimationFrame(inertia)
       inertia = null
+      gesture.current.inertia = false
     }
 
     const down = (e: PointerEvent) => {
@@ -342,6 +430,7 @@ export function MapView(props: Props) {
         vel = { x: 0, y: 0 }
       } else if (pointers.size === 2) {
         if (start) start.multi = true
+        gesture.current.drag = true
         const [a, b] = [...pointers.values()]
         pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, cam: { ...cam.current } }
       }
@@ -375,6 +464,7 @@ export function MapView(props: Props) {
       if (!start.moved && dist < threshold) return
       if (!start.moved) {
         start.moved = true
+        gesture.current.drag = true
         svg.classList.add(s.dragging)
         setHover(null)
       }
@@ -404,11 +494,13 @@ export function MapView(props: Props) {
       if (pointers.size > 0) return
       pinch = null
       svg.classList.remove(s.dragging)
+      gesture.current.drag = false
       const st = start
       start = null
       if (!st) return
       const isTap = !st.moved && !st.multi && performance.now() - st.t < 700
       if (isTap && e.type === 'pointerup') {
+        settle()
         tapAt(e)
         return
       }
@@ -417,17 +509,23 @@ export function MapView(props: Props) {
       if (st.moved && !st.multi && idle < 60 && Math.hypot(vel.x, vel.y) > 0.15) {
         let vx = vel.x * 16
         let vy = vel.y * 16
+        gesture.current.inertia = true
         const stepI = () => {
           vx *= 0.92
           vy *= 0.92
           const c = cam.current
           cam.current = clamp({ s: c.s, tx: c.tx + vx, ty: c.ty + vy })
-          apply()
-          if (Math.hypot(vx, vy) > 0.3) inertia = requestAnimationFrame(stepI)
-          else inertia = null
+          if (Math.hypot(vx, vy) > 0.3) {
+            apply()
+            inertia = requestAnimationFrame(stepI)
+          } else {
+            inertia = null
+            gesture.current.inertia = false
+            settle()
+          }
         }
         inertia = requestAnimationFrame(stepI)
-      }
+      } else settle()
     }
 
     const wheel = (e: WheelEvent) => {
@@ -438,6 +536,12 @@ export function MapView(props: Props) {
       const p = local(e)
       const k = e.ctrlKey ? 0.012 : 0.0022
       const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+      // колесо крутят «пачкой» — перерисовываем начисто, когда пауза 160 мс
+      if (gesture.current.wheel) clearTimeout(gesture.current.wheel)
+      gesture.current.wheel = setTimeout(() => {
+        gesture.current.wheel = 0
+        settle()
+      }, 160)
       zoomAround(p.x, p.y, Math.exp(-dy * k))
     }
 
@@ -479,9 +583,9 @@ export function MapView(props: Props) {
   const allIds = useMemo(() => Object.keys(data.regions), [data])
 
   const pickAt = (clientX: number, clientY: number): { id: string | null; proximity: boolean } => {
-    const svg = svgRef.current
-    if (!svg) return { id: null, proximity: false }
-    const r = svg.getBoundingClientRect()
+    const wrap = wrapRef.current
+    if (!wrap) return { id: null, proximity: false }
+    const r = wrap.getBoundingClientRect()
     const el = document.elementFromPoint(clientX, clientY) as Element | null
     const directRaw = el?.closest?.('[data-id]')?.getAttribute('data-id') ?? null
     const sel = live.current.selectable
@@ -513,7 +617,7 @@ export function MapView(props: Props) {
     const lbl = labelRef.current
     if (lbl) {
       if (id && e && live.current.hoverLabel) {
-        const r = svg.getBoundingClientRect()
+        const r = wrapRef.current!.getBoundingClientRect()
         lbl.textContent = REGION_BY_ID[id]?.name ?? id
         lbl.style.transform = `translate(${e.clientX - r.left + 14}px, ${e.clientY - r.top + 14}px)`
         lbl.style.opacity = '1'
@@ -541,7 +645,7 @@ export function MapView(props: Props) {
       ref={wrapRef}
       className={`${s.wrap} ${styleMode === 'board' ? s.board : s.study} ${palette === 'neutral' ? s.neutral : ''} ${ambient ? s.ambient : ''} ${className ?? ''}`}
     >
-      <svg ref={svgRef} className={s.svg} role="group" aria-label={ariaLabel}>
+      <svg ref={svgRef} className={s.svg} role="group" aria-label={ariaLabel} style={{ willChange: 'transform' }}>
         <g ref={gRef}>
           {styleMode === 'board' && <rect className={s.sea} x={-viewW} y={-viewH} width={viewW * 3} height={viewH * 3} />}
           <EdgeFade id={uid} w={viewW} h={viewH} />

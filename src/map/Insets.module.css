@@ -90,3 +90,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Врезки не панорамируются — пальцем листаем ленту */
+.card > div {
+  touch-action: pan-x pan-y;
+  cursor: pointer;
+}

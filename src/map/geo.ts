@@ -122,6 +122,41 @@ export function distanceToRegion(id: string, g: RegionGeo, px: number, py: numbe
 
 export type Rect = [number, number, number, number]
 
+const focusCache = new Map<string, Rect>()
+
+/**
+ * Рамка «основной части» региона — без мелких дальних островов
+ * (иначе камера целится в Землю Франца-Иосифа вместо Архангельской области).
+ */
+export function focusBBox(id: string, g: RegionGeo): Rect {
+  const hit = focusCache.get(id)
+  if (hit) return hit
+  const rings = ringsOf(id, g.d)
+  const area = (r: number[]) => {
+    let a = 0
+    for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) a += (r[j] + r[i]) * (r[j + 1] - r[i + 1])
+    return Math.abs(a / 2)
+  }
+  const areas = rings.map(area)
+  const max = Math.max(...areas)
+  let x0 = Infinity
+  let y0 = Infinity
+  let x1 = -Infinity
+  let y1 = -Infinity
+  rings.forEach((r, k) => {
+    if (areas[k] < max * 0.15) return
+    for (let i = 0; i < r.length; i += 2) {
+      x0 = Math.min(x0, r[i])
+      x1 = Math.max(x1, r[i])
+      y0 = Math.min(y0, r[i + 1])
+      y1 = Math.max(y1, r[i + 1])
+    }
+  })
+  const rect: Rect = x0 === Infinity ? g.b : [x0, y0, x1, y1]
+  focusCache.set(id, rect)
+  return rect
+}
+
 export function unionBBox(regions: Record<string, RegionGeo>, ids: string[]): Rect | null {
   let x0 = Infinity
   let y0 = Infinity
@@ -130,10 +165,11 @@ export function unionBBox(regions: Record<string, RegionGeo>, ids: string[]): Re
   for (const id of ids) {
     const g = regions[id]
     if (!g) continue
-    x0 = Math.min(x0, g.b[0])
-    y0 = Math.min(y0, g.b[1])
-    x1 = Math.max(x1, g.b[2])
-    y1 = Math.max(y1, g.b[3])
+    const b = focusBBox(id, g)
+    x0 = Math.min(x0, b[0])
+    y0 = Math.min(y0, b[1])
+    x1 = Math.max(x1, b[2])
+    y1 = Math.max(y1, b[3])
   }
   return x0 === Infinity ? null : [x0, y0, x1, y1]
 }

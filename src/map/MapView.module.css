@@ -3,6 +3,9 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* жесты обрабатываем сами: никакого системного зума и прокрутки */
+  touch-action: none;
+  cursor: grab;
   border-radius: inherit;
   user-select: none;
   -webkit-user-select: none;
@@ -15,13 +18,10 @@
   width: 100%;
   height: 100%;
   display: block;
-  /* жесты обрабатываем сами: никакого системного зума и прокрутки */
-  touch-action: none;
-  cursor: grab;
   outline: none;
 }
 
-.svg.dragging {
+.wrap.dragging {
   cursor: grabbing;
 }
 
